@@ -4,7 +4,7 @@
 
 :root {
 	--bg-primary: #ffffff;
-	--accent: #003E29;
+	--brand: #003E29;
 	--text: #000000;
 	--border: #e5e5e5;
 }
@@ -30,7 +30,7 @@ body {
 }
 
 .btn-primary {
-	background-color: var(--accent);
+	background-color: var(--brand);
 	color: #ffffff;
 	border-radius: 24px;
 	padding: 0.625rem 1.5rem;
@@ -46,9 +46,9 @@ body {
 
 .btn-secondary {
   background-color: transparent;
-  color: var(--accent);
+  color: var(--brand);
   border-radius: 24px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--brand);
   padding: 0.625rem 1.5rem;
   font-weight: 500;
 	transition: all 0.2s;
