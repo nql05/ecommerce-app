@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import adminService from '../services/adminService';
+import { Request, Response } from "express";
+import adminService from "../services/adminService";
 
 export const listSellers = async (req: Request, res: Response) => {
   const users = await adminService.listSellers();
@@ -9,19 +9,19 @@ export const listSellers = async (req: Request, res: Response) => {
 export const listBuyers = async (req: Request, res: Response) => {
   const users = await adminService.listBuyers();
   res.json(users);
-}
+};
 
 export const readSeller = async (req: Request, res: Response) => {
   const { loginName } = req.params;
   const user = await adminService.readSeller(loginName);
   res.json(user);
-}
+};
 
 export const readBuyer = async (req: Request, res: Response) => {
   const { loginName } = req.params;
   const user = await adminService.readBuyer(loginName);
   res.json(user);
-}
+};
 
 // Preserve for future use
 // export const editUser = async (req: Request, res: Response) => {

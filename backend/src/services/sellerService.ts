@@ -1,7 +1,10 @@
-import prisma from '../mssql/prisma';
+import prisma from "../mssql/prisma";
 
 const listSellerProducts = async (loginName: string) => {
-  return prisma.productInfo.findMany({ where: { LoginName: loginName }, include: { SKU: { include: { Comment: true } } } });
+  return prisma.productInfo.findMany({
+    where: { LoginName: loginName },
+    include: { SKU: { include: { Comment: true } } },
+  });
 };
 
 const createProduct = async (loginName: string, data: any) => {
@@ -9,8 +12,11 @@ const createProduct = async (loginName: string, data: any) => {
 };
 
 const readProduct = async (id: number) => {
-  return prisma.productInfo.findUnique({ where: { ProductID: id }, include: { SKU: { include: { Comment: true } } } });
-}
+  return prisma.productInfo.findUnique({
+    where: { ProductID: id },
+    include: { SKU: { include: { Comment: true } } },
+  });
+};
 
 const updateProduct = async (id: number, data: any) => {
   return prisma.productInfo.update({ where: { ProductID: id }, data });
@@ -21,7 +27,9 @@ const deleteProduct = async (id: number) => {
 };
 
 const getEarnings = async (loginName: string) => {
-  const seller = await prisma.seller.findUnique({ where: { LoginName: loginName } });
+  const seller = await prisma.seller.findUnique({
+    where: { LoginName: loginName },
+  });
   return seller?.MoneyEarned ?? 0;
 };
 

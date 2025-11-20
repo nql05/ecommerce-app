@@ -1,4 +1,4 @@
-import prisma from '../mssql/prisma';
+import prisma from "../mssql/prisma";
 
 const listBuyers = async () => {
   return prisma.userInfo.findMany({ include: { Buyer: true } });
@@ -6,7 +6,7 @@ const listBuyers = async () => {
 
 const listSellers = async () => {
   return prisma.userInfo.findMany({ include: { Seller: true } });
-}
+};
 
 // Preserved for future use
 // const updateUser = async (loginName: string, data: any) => {
@@ -14,12 +14,18 @@ const listSellers = async () => {
 // };
 
 const readBuyer = async (loginName: string) => {
-  return prisma.userInfo.findUnique({ where: { LoginName: loginName }, include: { Buyer: true } });
+  return prisma.userInfo.findUnique({
+    where: { LoginName: loginName },
+    include: { Buyer: true },
+  });
 };
 
 const readSeller = async (loginName: string) => {
-  return prisma.userInfo.findUnique({ where: { LoginName: loginName }, include: { Seller: true } });
-}
+  return prisma.userInfo.findUnique({
+    where: { LoginName: loginName },
+    include: { Seller: true },
+  });
+};
 
 export default {
   listBuyers,

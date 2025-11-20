@@ -11,14 +11,17 @@ const hashPassword = async (password) => {
 };
 exports.hashPassword = hashPassword;
 const comparePassword = async (password, hash) => {
-    return await bcryptjs_1.default.compare(password, hash);
+    // return await bcrypt.compare(password, hash);
+    return password == hash;
 };
 exports.comparePassword = comparePassword;
 const generateToken = (payload) => {
-    return jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
+    return jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET || "secret", {
+        expiresIn: "1h",
+    });
 };
 exports.generateToken = generateToken;
 const verifyToken = (token) => {
-    return jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'secret');
+    return jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "secret");
 };
 exports.verifyToken = verifyToken;
