@@ -1,18 +1,29 @@
 import prisma from '../mssql/prisma';
 
-const listUsers = async () => {
-  return prisma.userInfo.findMany({ include: { Buyer: true, Seller: true } });
+const listBuyers = async () => {
+  return prisma.userInfo.findMany({ include: { Buyer: true } });
 };
 
-const updateUser = async (loginName: string, data: any) => {
-  return prisma.userInfo.update({ where: { LoginName: loginName }, data });
+const listSellers = async () => {
+  return prisma.userInfo.findMany({ include: { Seller: true } });
+}
+
+// Preserved for future use
+// const updateUser = async (loginName: string, data: any) => {
+//   return prisma.userInfo.update({ where: { LoginName: loginName }, data });
+// };
+
+const readBuyer = async (loginName: string) => {
+  return prisma.userInfo.findUnique({ where: { LoginName: loginName }, include: { Buyer: true } });
 };
 
-const getStats = async () => {
-  const userCount = await prisma.userInfo.count();
-  const productCount = await prisma.productInfo.count();
-  const orderCount = await prisma.orderInfo.count();
-  return { userCount, productCount, orderCount };
-};
+const readSeller = async (loginName: string) => {
+  return prisma.userInfo.findUnique({ where: { LoginName: loginName }, include: { Seller: true } });
+}
 
-export default { listUsers, updateUser, getStats };
+export default {
+  listBuyers,
+  listSellers,
+  readBuyer,
+  readSeller,
+};

@@ -1,16 +1,16 @@
 import express from 'express';
 import cors from 'cors';
-import authRoutes from './routes/auth';
-import productRoutes from './routes/products';
-import sellerRoutes from './routes/seller';
-import adminRoutes from './routes/admin';
+import authRoutes from './routes/auth_route';
+import buyerRoutes from './routes/buyers_route';
+import sellerRoutes from './routes/seller_route';
+import adminRoutes from './routes/admin_route';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/auth', authRoutes);
-app.use('/products', productRoutes);
+app.use('/buyers', buyerRoutes);
 app.use('/seller', sellerRoutes);
 app.use('/admin', adminRoutes);
 

@@ -1,20 +1,43 @@
 import { Request, Response } from 'express';
 import adminService from '../services/adminService';
 
-export const listUsers = async (req: Request, res: Response) => {
-  const users = await adminService.listUsers();
+export const listSellers = async (req: Request, res: Response) => {
+  const users = await adminService.listSellers();
   res.json(users);
 };
 
-export const editUser = async (req: Request, res: Response) => {
+export const listBuyers = async (req: Request, res: Response) => {
+  const users = await adminService.listBuyers();
+  res.json(users);
+}
+
+export const readSeller = async (req: Request, res: Response) => {
   const { loginName } = req.params;
-  const user = await adminService.updateUser(loginName, req.body);
+  const user = await adminService.readSeller(loginName);
   res.json(user);
-};
+}
 
-export const stats = async (req: Request, res: Response) => {
-  const s = await adminService.getStats();
-  res.json(s);
-};
+export const readBuyer = async (req: Request, res: Response) => {
+  const { loginName } = req.params;
+  const user = await adminService.readBuyer(loginName);
+  res.json(user);
+}
 
-export default { listUsers, editUser, stats };
+// Preserve for future use
+// export const editUser = async (req: Request, res: Response) => {
+//   const { loginName } = req.params;
+//   const user = await adminService.updateUser(loginName, req.body);
+//   res.json(user);
+// };
+
+// export const stats = async (req: Request, res: Response) => {
+//   const s = await adminService.getStats();
+//   res.json(s);
+// };
+
+export default {
+  listSellers,
+  listBuyers,
+  readSeller,
+  readBuyer,
+};
