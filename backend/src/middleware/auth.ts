@@ -1,26 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/auth';
+import { Request, Response, NextFunction } from "express";
+import { verifyToken } from "../utils/auth";
 
 export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Access denied' });
+export const authenticate = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Access denied" });
   try {
     const decoded = verifyToken(token);
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(400).json({ error: 'Invalid token' });
+    res.status(400).json({ error: "Invalid token" });
   }
 };
 
 export const authorize = (roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: "Forbidden" });
     }
     next();
   };
