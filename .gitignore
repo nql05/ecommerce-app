@@ -13,6 +13,7 @@ build/
 
 # Next.js build cache and manifests
 /frontend/.next/cache/
+/frontend/.next/trace
 *.pack.gz
 *-manifest.json
 app-build-manifest.json
