@@ -31,6 +31,12 @@ const updateCartQuantity = async (loginName: string, productID: number, skuName:
   return prisma.storedSKU.update({ where: { ProductID_CartID_SKUName: { ProductID: productID, CartID: cart.CartID, SKUName: skuName } }, data: { Quantity: quantity } });
 };
 
+const removeFromCart = async (loginName: string, productID: number, skuName: string) => {
+  const cart = await prisma.cart.findFirst({ where: { LoginName: loginName } });
+  if (!cart) throw new Error('Cart not found');
+  return prisma.storedSKU.delete({ where: { ProductID_CartID_SKUName: { ProductID: productID, CartID: cart.CartID, SKUName: skuName } } });
+}
+
 const createOrder = async (loginName: string, skus: any[], addressID: number, providerName: string, accountID?: string | number | null) => {
   const accountIdValue = accountID == null ? null : String(accountID);
   const order = await prisma.orderInfo.create({ data: { LoginName: loginName, AddressID: addressID, ProviderName: providerName, AccountID: accountIdValue } });
@@ -54,6 +60,7 @@ export default {
   findUnique,
   addToCart,
   getCart,
+  removeFromCart,
   updateCartQuantity,
   createOrder,
 };

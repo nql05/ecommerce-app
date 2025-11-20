@@ -8,6 +8,10 @@ const createProduct = async (loginName: string, data: any) => {
   return prisma.productInfo.create({ data: { ...data, LoginName: loginName } });
 };
 
+const readProduct = async (id: number) => {
+  return prisma.productInfo.findUnique({ where: { ProductID: id }, include: { SKU: { include: { Comment: true } } } });
+}
+
 const updateProduct = async (id: number, data: any) => {
   return prisma.productInfo.update({ where: { ProductID: id }, data });
 };
@@ -24,6 +28,7 @@ const getEarnings = async (loginName: string) => {
 export default {
   listSellerProducts,
   createProduct,
+  readProduct,
   updateProduct,
   deleteProduct,
   getEarnings,

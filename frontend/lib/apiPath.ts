@@ -11,7 +11,6 @@ export const API_PATHS = {
             LIST: '/api/buyer/products',                                    // Get all products (all sellers)
             SEARCH: '/api/buyer/products/search',                           // Search all products
             DETAIL: (productId: string) => `/api/buyer/products/${productId}`,  // Product detail
-            COMMENT: (productId: string) => `/api/buyer/products/${productId}/comments`  // Product comments
         },
         CART: {
             GET: '/api/buyer/cart',
@@ -28,7 +27,6 @@ export const API_PATHS = {
             LIST: '/api/seller/products',                                   // Get only seller's shop products
             SEARCH: '/api/seller/products/search',                          // Search seller's shop products
             DETAIL: (productId: string) => `/api/seller/products/${productId}`,
-            COMMENT: (productId: string) => `/api/seller/products/${productId}/comment`, // Product comments
             ADD: '/api/seller/products/add',
         },
     },

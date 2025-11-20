@@ -28,4 +28,13 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export default { register, login };
+export const logout = async (req: Request, res: Response) => {
+  // For stateless JWT, logout can be handled on the client side by deleting the token.
+  res.json({ message: 'Logged out successfully' });
+}
+
+export default {
+  register,
+  login,
+  logout,
+};
