@@ -100,26 +100,6 @@ export default function Login() {
             <div><span className="font-bold text-white">Role:</span> buyer</div>
           </div>
         </div>
-        <div className="p-8 rounded-xl card hidden md:block" style={{ background: 'linear-gradient(180deg, rgba(22,163,148,0.12), rgba(22,163,148,0.04))' }}>
-          <h3 className="text-lg font-bold mb-2">Discover great products</h3>
-          <p className="text-sm text-gray-300 mb-4">Fast checkout, trusted sellers, curated collections — all in one place.</p>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between bg-[rgba(255,255,255,0.02)] p-3 rounded">
-              <div>
-                <div className="text-sm text-gray-200 font-semibold">Secure Payments</div>
-                <div className="text-xs text-gray-400">Safe and encrypted</div>
-              </div>
-              <div className="text-[var(--accent)] font-bold">NEW</div>
-            </div>
-            <div className="flex items-center justify-between bg-[rgba(255,255,255,0.02)] p-3 rounded">
-              <div>
-                <div className="text-sm text-gray-200 font-semibold">Fast Shipping</div>
-                <div className="text-xs text-gray-400">On-demand delivery</div>
-              </div>
-              <div className="text-[var(--accent)] font-bold">TOP</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

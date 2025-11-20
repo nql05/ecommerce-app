@@ -11,6 +11,14 @@ out/
 dist/
 build/
 
+# Next.js build cache and manifests
+/frontend/.next/cache/
+*.pack.gz
+*-manifest.json
+app-build-manifest.json
+build-manifest.json
+react-loadable-manifest.json
+
 ### Frontend app
 /frontend/node_modules/
 /frontend/.next/
