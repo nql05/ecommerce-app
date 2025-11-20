@@ -12,6 +12,7 @@ const hashPassword = async (password) => {
 exports.hashPassword = hashPassword;
 const comparePassword = async (password, hash) => {
     // return await bcrypt.compare(password, hash);
+    // Now we use simple version, later add registration with hashed password
     return password == hash;
 };
 exports.comparePassword = comparePassword;
