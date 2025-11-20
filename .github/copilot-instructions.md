@@ -1,0 +1,4 @@
+- [ ] Project structure scaffolded for e-commerce website (Next.js frontend, Express.js backend)
+- [ ] Backend and frontend have basic README and package.json
+- [ ] Shared types folder created
+- [ ] Continue with implementation as needed
