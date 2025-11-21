@@ -37,7 +37,8 @@ Express.js API server for the e-commerce website.
 ## Usage
 
 - Install dependencies: `npm install`
-- Compile the typescript files: `npm run build`
+- The run, build database and connect to it follow the guide in the next section.
+- Compile the typescript files: `npm run build`.
 - Start server: `npm start`
 
 ## How to build database for the project running on Docker
