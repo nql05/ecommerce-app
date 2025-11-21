@@ -2,6 +2,39 @@
 
 Express.js API server for the e-commerce website.
 
+## Table of content
+
+- [E-commerce Backend](#e-commerce-backend)
+  - [Table of content](#table-of-content)
+  - [Usage](#usage)
+  - [Auth API Endpoints](#auth-api-endpoints)
+    - [`POST /auth/login` - For logging into the page](#post-authlogin---for-logging-into-the-page)
+    - [`POST /auth/logout` - For loggin out of the page](#post-authlogout---for-loggin-out-of-the-page)
+  - [Seller API Endpoints](#seller-api-endpoints)
+    - [`GET /seller/products` - Get seller's products](#get-sellerproducts---get-sellers-products)
+    - [`GET /seller/products/:id` - Get product details](#get-sellerproductsid---get-product-details)
+    - [`PUT /seller/products/:id` - Edit product details](#put-sellerproductsid---edit-product-details)
+    - [`POST /seller/products/add` - Add a new product](#post-sellerproductsadd---add-a-new-product)
+    - [`DELETE /seller/products/:id` - Delete a product](#delete-sellerproductsid---delete-a-product)
+    - [`GET /seller/earnings` - View seller earnings](#get-sellerearnings---view-seller-earnings)
+    - [Notes about comments and SKUs](#notes-about-comments-and-skus)
+  - [Buyer API Endpoints](#buyer-api-endpoints)
+    - [`GET /buyers/products` - Browse products (public)](#get-buyersproducts---browse-products-public)
+    - [`GET /buyers/products/:id` - Product details (public)](#get-buyersproductsid---product-details-public)
+    - [`POST /buyers/cart` - Add item to cart / Edit quantity if already existed](#post-buyerscart---add-item-to-cart--edit-quantity-if-already-existed)
+    - [`GET /buyers/cart` - Get current cart](#get-buyerscart---get-current-cart)
+    - [`DELETE /buyers/cart` - Remove an item from cart](#delete-buyerscart---remove-an-item-from-cart)
+    - [`POST /buyers/order/create` - Create an order](#post-buyersordercreate---create-an-order)
+    - [`GET /buyers/order/:id` - Get Order ID](#get-buyersorderid---get-order-id)
+  - [Admin API Endpoints](#admin-api-endpoints)
+    - [`GET /admin/sellers` - List all sellers](#get-adminsellers---list-all-sellers)
+    - [`GET /admin/sellers/:loginName` - Read seller details](#get-adminsellersloginname---read-seller-details)
+    - [`GET /admin/buyers` - List all buyers](#get-adminbuyers---list-all-buyers)
+    - [`GET /admin/buyers/:loginName` - Read buyer details](#get-adminbuyersloginname---read-buyer-details)
+  - [How to build database for the project running on Docker](#how-to-build-database-for-the-project-running-on-docker)
+  - [How to pull the database to your Prisma schema](#how-to-pull-the-database-to-your-prisma-schema)
+
+
 ## Usage
 
 - Install dependencies: `npm install`
