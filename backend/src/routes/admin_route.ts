@@ -7,13 +7,13 @@ const router = express.Router();
 router.get(
   "/sellers",
   authenticate,
-  authorize(["admin"]),
+  authorize(["A"]),
   adminController.listSellers
 );
 router.get(
   "/sellers/:loginName",
   authenticate,
-  authorize(["admin"]),
+  authorize(["A"]),
   adminController.readSeller
 );
 // router.put('/sellers/:loginName', authenticate, authorize(['admin']), adminController.editUser);
@@ -21,13 +21,13 @@ router.get(
 router.get(
   "/buyers",
   authenticate,
-  authorize(["admin"]),
+  authorize(["A"]),
   adminController.listBuyers
 );
 router.get(
   "/buyers/:loginName",
   authenticate,
-  authorize(["admin"]),
+  authorize(["A"]),
   adminController.readBuyer
 );
 

@@ -7,6 +7,8 @@ Express.js API server for the e-commerce website.
 - [E-commerce Backend](#e-commerce-backend)
   - [Table of content](#table-of-content)
   - [Usage](#usage)
+  - [How to build database for the project running on Docker](#how-to-build-database-for-the-project-running-on-docker)
+  - [How to pull the database to your Prisma schema](#how-to-pull-the-database-to-your-prisma-schema)
   - [Auth API Endpoints](#auth-api-endpoints)
     - [`POST /auth/login` - For logging into the page](#post-authlogin---for-logging-into-the-page)
     - [`POST /auth/logout` - For loggin out of the page](#post-authlogout---for-loggin-out-of-the-page)
@@ -31,14 +33,58 @@ Express.js API server for the e-commerce website.
     - [`GET /admin/sellers/:loginName` - Read seller details](#get-adminsellersloginname---read-seller-details)
     - [`GET /admin/buyers` - List all buyers](#get-adminbuyers---list-all-buyers)
     - [`GET /admin/buyers/:loginName` - Read buyer details](#get-adminbuyersloginname---read-buyer-details)
-  - [How to build database for the project running on Docker](#how-to-build-database-for-the-project-running-on-docker)
-  - [How to pull the database to your Prisma schema](#how-to-pull-the-database-to-your-prisma-schema)
-
 
 ## Usage
 
 - Install dependencies: `npm install`
+- Compile the typescript files: `npm run build`
 - Start server: `npm start`
+
+## How to build database for the project running on Docker
+
+- **Install Docker** if you don't have it already: `https://docs.docker.com/get-docker/`.
+- **Install the SQL Server image**
+
+```bash
+docker pull mcr.microsoft.com/mssql/server:2019-latest
+```
+
+- **Run the SQL Server container**
+
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+-p 1433:1433 --name sqlserver \
+-d mcr.microsoft.com/mssql/server:2019-latest
+```
+
+- Explain of the variable in the above command:
+  - `ACCEPT_EULA`: You must accept the end user license agreement.
+  - `SA_PASSWORD`: Set the password for the system administrator (SA) account. Make sure it meets SQL Server's password complexity requirements.
+  - `-p 1433:1433`: Maps port 1433 of the container to port 1433 on the host machine.
+  - `--name sqlserver`: Names the container "sqlserver".
+  - `-d`: Runs the container in detached mode (in the background).
+- **Connect to the SQL Server instance** using a SQL client like Azure Data Studio or SQL Server Management Studio with the following details:
+  - **Server**: localhost,1433
+  - **Authentication**: SQL Login
+  - **Login**: sa
+  - **Password**: YourStrong@Passw0rd
+- **Create a new database** named `Test` by running the SQL command in the `/db/test.sql`. This script also add some initial data to the database.
+
+## How to pull the database to your Prisma schema
+
+- **Run you database** in Docker or something else, retrieve the URL.
+- **Copy the `.env` file** and then add the URL to the variable `DATABASE_URL` in the following format:
+
+```env
+sqlserver://localhost:1433;database=Test;user=sa;password=YourStrong@Passw0rd;encrypt=true;trustServerCertificate=true
+```
+
+- **Run the command in the backend folder** `npx prisma db pull`. After this step, your schema has the `models` from the database tables.
+  - If you have already has the models in `prisma/schema.prisma`, you may need to delete them first before running the command or use with option `--force` to overwrite.
+  - If you want the database to match your Prisma schema, you can use the command `npx prisma db push` instead to force the DB to match the schema.
+    - For a safer approach, use `npx prisma migrate dev` to create a migration file (`.sql`) and apply the changes to the database by running those SQL queries.
+- Now, **Create Prisma Client** to be able to use the database: `npx prisma generate`. Make sure your database has no duplicate name for tables / columns, or else error will occurs.
+
 
 ## Auth API Endpoints
 
@@ -1031,64 +1077,252 @@ Note: admin routes are mounted under `/admin` and require JWT with role `A` (Adm
 **Request:** `GET /admin/sellers` with JWT (role `A`).
 **Response:** Array of seller accounts / brief seller information as returned by `adminController.listSellers`.
 
+```json
+[
+    {
+        "LoginName": "user001",
+        "Password": "Pass123!@#",
+        "PhoneNumber": "0901234567",
+        "Email": "john.doe@gmail.com",
+        "UserName": "JohnDoe",
+        "Gender": true,
+        "BirthDate": "1990-05-15T00:00:00.000Z",
+        "Age": 35,
+        "Address": "123 Main St, District 1, HCMC",
+        "Seller": {
+            "LoginName": "user001",
+            "ShopName": "JohnTech Store",
+            "CitizenIDCard": "001234567890",
+            "SellerName": "John Doe Shop",
+            "MoneyEarned": 130410000
+        }
+    },
+    {
+        "LoginName": "user003",
+        "Password": "MyPass789",
+        "PhoneNumber": "0923456789",
+        "Email": "mike.wilson@outlook.com",
+        "UserName": "MikeWilson",
+        "Gender": true,
+        "BirthDate": "1988-03-10T00:00:00.000Z",
+        "Age": 37,
+        "Address": "789 Pine Rd, District 3, HCMC",
+        "Seller": {
+            "LoginName": "user003",
+            "ShopName": "Wilson Electronics",
+            "CitizenIDCard": "003456789012",
+            "SellerName": "Mike Wilson Shop",
+            "MoneyEarned": 0
+        }
+    }
+]
+```
+
 ### `GET /admin/sellers/:loginName` - Read seller details
 
 **Request:** `GET /admin/sellers/:loginName` with JWT (role `A`).
-**Response:** Full seller profile as returned by `adminController.readSeller`.
+**Response:** Full seller profile as returned by `adminController.readSeller`:
+
+```json
+{
+    "LoginName": "user001",
+    "Password": "Pass123!@#",
+    "PhoneNumber": "0901234567",
+    "Email": "john.doe@gmail.com",
+    "UserName": "JohnDoe",
+    "Gender": true,
+    "BirthDate": "1990-05-15T00:00:00.000Z",
+    "Age": 35,
+    "Address": "123 Main St, District 1, HCMC",
+    "Seller": {
+        "LoginName": "user001",
+        "ShopName": "JohnTech Store",
+        "CitizenIDCard": "001234567890",
+        "SellerName": "John Doe Shop",
+        "MoneyEarned": 130410000
+    }
+}
+```
+
+Currently, this has no information of the seller's products, SKUs, delivery partner, ... These will be provided later after @nql05 provide the script / function for that.
 
 ### `GET /admin/buyers` - List all buyers
 
 **Request:** `GET /admin/buyers` with JWT (role `A`).
-**Response:** Array of buyer accounts / brief buyer information as returned by `adminController.listBuyers`.
+**Response:** Array of buyer accounts / brief buyer information as returned by `adminController.listBuyers`:
+
+```json
+[
+    {
+        "LoginName": "user002",
+        "Password": "SecurePass456",
+        "PhoneNumber": "0912345678",
+        "Email": "jane.smith@yahoo.com",
+        "UserName": "JaneSmith",
+        "Gender": false,
+        "BirthDate": "1992-08-20T00:00:00.000Z",
+        "Age": 33,
+        "Address": "456 Oak Ave, District 2, HCMC",
+        "Buyer": {
+            "LoginName": "user002",
+            "MoneySpent": 43500000
+        }
+    },
+    {
+        "LoginName": "user004",
+        "Password": "Password2024",
+        "PhoneNumber": "0934567890",
+        "Email": "sarah.johnson@gmail.com",
+        "UserName": "SarahJohnson",
+        "Gender": false,
+        "BirthDate": "1995-11-25T00:00:00.000Z",
+        "Age": 30,
+        "Address": "321 Elm St, District 4, HCMC",
+        "Buyer": {
+            "LoginName": "user004",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user005",
+        "Password": "Safe@Pass01",
+        "PhoneNumber": "0945678901",
+        "Email": null,
+        "UserName": "DavidBrown",
+        "Gender": true,
+        "BirthDate": "1991-07-08T00:00:00.000Z",
+        "Age": 34,
+        "Address": "654 Maple Dr, District 5, HCMC",
+        "Buyer": {
+            "LoginName": "user005",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user006",
+        "Password": "Qwerty!234",
+        "PhoneNumber": null,
+        "Email": "emily.davis@hotmail.com",
+        "UserName": "EmilyDavis",
+        "Gender": false,
+        "BirthDate": "1993-02-14T00:00:00.000Z",
+        "Age": 32,
+        "Address": "987 Cedar Ln, District 6, HCMC",
+        "Buyer": {
+            "LoginName": "user006",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user007",
+        "Password": "Test@Pass99",
+        "PhoneNumber": "0967890123",
+        "Email": "robert.miller@gmail.com",
+        "UserName": "RobertMiller",
+        "Gender": true,
+        "BirthDate": "1989-12-30T00:00:00.000Z",
+        "Age": 36,
+        "Address": "147 Birch Blvd, District 7, HCMC",
+        "Buyer": {
+            "LoginName": "user007",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user008",
+        "Password": "Strong#Pass",
+        "PhoneNumber": "0978901234",
+        "Email": "lisa.anderson@yahoo.com",
+        "UserName": "LisaAnderson",
+        "Gender": false,
+        "BirthDate": "1994-06-18T00:00:00.000Z",
+        "Age": 31,
+        "Address": "258 Spruce St, District 8, HCMC",
+        "Buyer": {
+            "LoginName": "user008",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user009",
+        "Password": "MySecret123",
+        "PhoneNumber": "0989012345",
+        "Email": "james.taylor@outlook.com",
+        "UserName": "JamesTaylor",
+        "Gender": true,
+        "BirthDate": "1987-09-05T00:00:00.000Z",
+        "Age": 38,
+        "Address": "369 Willow Way, District 9, HCMC",
+        "Buyer": {
+            "LoginName": "user009",
+            "MoneySpent": 0
+        }
+    },
+    {
+        "LoginName": "user010",
+        "Password": "Pass@Word10",
+        "PhoneNumber": "0990123456",
+        "Email": "amanda.white@gmail.com",
+        "UserName": "AmandaWhite",
+        "Gender": false,
+        "BirthDate": "1996-04-22T00:00:00.000Z",
+        "Age": 29,
+        "Address": "741 Ash Court, District 10, HCMC",
+        "Buyer": {
+            "LoginName": "user010",
+            "MoneySpent": 0
+        }
+    }
+]
+```
 
 ### `GET /admin/buyers/:loginName` - Read buyer details
 
 **Request:** `GET /admin/buyers/:loginName` with JWT (role `A`).
-**Response:** Full buyer profile as returned by `adminController.readBuyer`.
+**Response:** Full buyer profile as returned by `adminController.readBuyer`. This is now currently the same as a user profile retrieve by the `GET /admin/buyers`, more information (Order, Cart, Comments, ...) will be later provided by @nql05.
 
-**Notes:** Additional admin actions (create/edit/delete users, change roles, suspend accounts) are not implemented in the current routes (see commented TODOs in the code).
-
-## How to build database for the project running on Docker
-
-- **Install Docker** if you don't have it already: `https://docs.docker.com/get-docker/`.
-- **Install the SQL Server image**
-
-```bash
-docker pull mcr.microsoft.com/mssql/server:2019-latest
+```json
+{
+    "LoginName": "user002",
+    "Password": "SecurePass456",
+    "PhoneNumber": "0912345678",
+    "Email": "jane.smith@yahoo.com",
+    "UserName": "JaneSmith",
+    "Gender": false,
+    "BirthDate": "1992-08-20T00:00:00.000Z",
+    "Age": 33,
+    "Address": "456 Oak Ave, District 2, HCMC",
+    "Buyer": {
+        "LoginName": "user002",
+        "MoneySpent": 43500000
+    },
+    "AddressInfo": [
+        {
+            "LoginName": "user002",
+            "AddressID": 3,
+            "ContactName": "Jane Smith",
+            "ContactPhoneNumber": "0912345678",
+            "City": "Ho Chi Minh City",
+            "District": "District 2",
+            "Commune": "Ward 2",
+            "DetailAddress": "456 Oak Ave",
+            "AddressType": "Home",
+            "IsAddressDefault": true
+        },
+        {
+            "LoginName": "user002",
+            "AddressID": 4,
+            "ContactName": "Jane Smith",
+            "ContactPhoneNumber": "0912345678",
+            "City": "Ho Chi Minh City",
+            "District": "District 1",
+            "Commune": "Ward 3",
+            "DetailAddress": "789 Office Blvd",
+            "AddressType": "Office",
+            "IsAddressDefault": false
+        }
+    ]
+}
 ```
 
-- **Run the SQL Server container**
-
-```bash
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
--p 1433:1433 --name sqlserver \
--d mcr.microsoft.com/mssql/server:2019-latest
-```
-
-- Explain of the variable in the above command:
-  - `ACCEPT_EULA`: You must accept the end user license agreement.
-  - `SA_PASSWORD`: Set the password for the system administrator (SA) account. Make sure it meets SQL Server's password complexity requirements.
-  - `-p 1433:1433`: Maps port 1433 of the container to port 1433 on the host machine.
-  - `--name sqlserver`: Names the container "sqlserver".
-  - `-d`: Runs the container in detached mode (in the background).
-- **Connect to the SQL Server instance** using a SQL client like Azure Data Studio or SQL Server Management Studio with the following details:
-  - **Server**: localhost,1433
-  - **Authentication**: SQL Login
-  - **Login**: sa
-  - **Password**: YourStrong@Passw0rd
-- **Create a new database** named `Test` by running the SQL command in the `/db/test.sql`. This script also add some initial data to the database.
-
-## How to pull the database to your Prisma schema
-
-- **Run you database** in Docker or something else, retrieve the URL.
-- **Copy the `.env` file** and then add the URL to the variable `DATABASE_URL` in the following format:
-
-```env
-sqlserver://localhost:1433;database=Test;user=sa;password=YourStrong@Passw0rd;encrypt=true;trustServerCertificate=true
-```
-
-- **Run the command in the backend folder** `npx prisma db pull`. After this step, your schema has the `models` from the database tables.
-  - If you have already has the models in `prisma/schema.prisma`, you may need to delete them first before running the command or use with option `--force` to overwrite.
-  - If you want the database to match your Prisma schema, you can use the command `npx prisma db push` instead to force the DB to match the schema.
-    - For a safer approach, use `npx prisma migrate dev` to create a migration file (`.sql`) and apply the changes to the database by running those SQL queries.
-- Now, **Create Prisma Client** to be able to use the database: `npx prisma generate`. Make sure your database has no duplicate name for tables / columns, or else error will occurs.
+**Notes:** Additional admin actions (create/edit/delete users, change roles, suspend accounts) are not implemented (may be when rảnh :D).
