@@ -136,6 +136,7 @@ Note: seller routes are mounted under the `/seller` prefix. Most seller actions 
 ### `GET /seller/products` - Get seller's products
 
 **Request:** `GET /seller/products` with a valid JWT (role `S` or `A`).
+
 **Response:** A list of the seller's products (brief information). Example format:
 
 ```json
@@ -313,6 +314,7 @@ Note: seller routes are mounted under the `/seller` prefix. Most seller actions 
 ### `GET /seller/products/:id` - Get product details
 
 **Request:** `GET /seller/products/:id` with a valid JWT (role `S` or `A`). `:id` is the product id.
+
 **Response:** A dictionary of the product's details. Example:
 
 ```json
@@ -455,11 +457,13 @@ Do not include `ProductID` in the body — IDs are immutable. Modifying SKUs is 
 ### `DELETE /seller/products/:id` - Delete a product
 
 **Request:** `DELETE /seller/products/:id` with JWT (role `S` or `A`).
+
 **Response:** `200 - OK` on success or `404` if not found.
 
 ### `GET /seller/earnings` - View seller earnings
 
 **Request:** `GET /seller/earnings` with JWT (role `S` or `A`).
+
 **Response:** Summary object or list describing earnings for the authenticated seller:
 
 ```json
@@ -479,6 +483,7 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 ### `GET /buyers/products` - Browse products (public)
 
 **Request:** `GET /buyers/products` (no JWT required).
+
 **Response:** List of products (brief information) similar to seller listing.
 
 ```json
@@ -834,6 +839,7 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 ### `GET /buyers/products/:id` - Product details (public)
 
 **Request:** `GET /buyers/products/:id` (no JWT required).
+
 **Response:** Product detail object (same structure as seller product detail):
 
 ```json
@@ -905,6 +911,7 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 ### `GET /buyers/cart` - Get current cart
 
 **Request:** `GET /buyers/cart` with JWT (role `B`).
+
 **Response:** Cart contents like this:
 
 ```json
@@ -1041,6 +1048,7 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 ### `GET /buyers/order/:id` - Get Order ID
 
 **Request:** Send `GET /buyer/order/:id` with `:id` is the order id
+
 **Response:** The order object with the following format:
 
 ```json
@@ -1075,6 +1083,7 @@ Note: admin routes are mounted under `/admin` and require JWT with role `A` (Adm
 ### `GET /admin/sellers` - List all sellers
 
 **Request:** `GET /admin/sellers` with JWT (role `A`).
+
 **Response:** Array of seller accounts / brief seller information as returned by `adminController.listSellers`.
 
 ```json
@@ -1121,6 +1130,7 @@ Note: admin routes are mounted under `/admin` and require JWT with role `A` (Adm
 ### `GET /admin/sellers/:loginName` - Read seller details
 
 **Request:** `GET /admin/sellers/:loginName` with JWT (role `A`).
+
 **Response:** Full seller profile as returned by `adminController.readSeller`:
 
 ```json
@@ -1149,6 +1159,7 @@ Currently, this has no information of the seller's products, SKUs, delivery part
 ### `GET /admin/buyers` - List all buyers
 
 **Request:** `GET /admin/buyers` with JWT (role `A`).
+
 **Response:** Array of buyer accounts / brief buyer information as returned by `adminController.listBuyers`:
 
 ```json
@@ -1279,6 +1290,7 @@ Currently, this has no information of the seller's products, SKUs, delivery part
 ### `GET /admin/buyers/:loginName` - Read buyer details
 
 **Request:** `GET /admin/buyers/:loginName` with JWT (role `A`).
+
 **Response:** Full buyer profile as returned by `adminController.readBuyer`. This is now currently the same as a user profile retrieve by the `GET /admin/buyers`, more information (Order, Cart, Comments, ...) will be later provided by @nql05.
 
 ```json
