@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 :root {
-	--bg-primary: rgb(9, 10, 21);
-	--accent: #16a394;
-	--text: #ffffff;
+	--bg-primary: #ffffff;
+	--brand: #003E29;
+	--text: #000000;
+	--border: #e5e5e5;
 }
 
-html, body, #__next {
+html, body {
 	height: 100%;
 }
 
@@ -21,27 +22,41 @@ body {
 }
 
 .card {
-	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-	border: 1px solid rgba(255,255,255,0.06);
+	background: #ffffff;
+	border: 1px solid var(--border);
 	border-radius: 12px;
 	padding: 1rem;
-	box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .btn-primary {
-	background-color: var(--accent);
-	color: var(--text);
-	border-radius: 10px;
-	padding: 0.6rem 1rem;
-	font-weight: 600;
+	background-color: var(--brand);
+	color: #ffffff;
+	border-radius: 24px;
+	padding: 0.625rem 1.5rem;
+	font-weight: 500;
+	transition: all 0.2s;
+	display: inline-block;
+	text-align: center;
+}
+
+.btn-primary:hover {
+	background-color: #002A1D;
 }
 
 .btn-secondary {
-  background-color: var(--bg-primary);
-  color: var(--accent);
-  border-radius: 10px;
-  border: 1px solid var(--accent);
-  padding: 0.6rem 1rem;
-  font-weight: 600;
+  background-color: transparent;
+  color: var(--brand);
+  border-radius: 24px;
+  border: 1px solid var(--brand);
+  padding: 0.625rem 1.5rem;
+  font-weight: 500;
+	transition: all 0.2s;
+	display: inline-block;
+	text-align: center;
+}
+
+.btn-secondary:hover {
+	background-color: #f5f5f5;
 }
 

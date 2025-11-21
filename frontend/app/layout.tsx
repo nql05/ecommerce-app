@@ -1,10 +1,9 @@
-import '../styles/globals.css';
-import { AuthProvider } from '../context/AuthProvider';
-import Header from '../components/Header';
+import "../styles/globals.css";
+import { AuthProvider } from "../context/AuthProvider";
 
 export const metadata = {
-  title: 'E-commerce App',
-  description: 'Modern e-commerce application',
+  title: "E-commerce App",
+  description: "Modern e-commerce application",
 };
 
 export default function RootLayout({
@@ -15,10 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <Header />
-          <main>{children}</main>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
