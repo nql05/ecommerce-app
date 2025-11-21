@@ -76,7 +76,7 @@ CREATE TABLE OrderInfo (
 	TotalPrice INT NOT NULL DEFAULT 0, -- we need to create a trigger from sub order 
 	-- Component of Payment Method
 	ProviderName VARCHAR(100) NOT NULL DEFAULT 'VCB' CHECK(ProviderName IN ('VCB', 'OCB', 'MoMo', 'ZaloPay')),
-	AccountID VARCHAR(30) UNIQUE,
+	AccountID VARCHAR(30),
 	AddressID INT NOT NULL,
 	--Constraint
 	PRIMARY KEY (OrderID),

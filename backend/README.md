@@ -7,19 +7,1031 @@ Express.js API server for the e-commerce website.
 - Install dependencies: `npm install`
 - Start server: `npm start`
 
+## Auth API Endpoints
+
+### `POST /auth/login` - For logging into the page
+
+**Request:** A POST method to this endpoint, no need the `Bearer ...` (JWT), the body of the request contains:
+
+- `loginName`: user login name
+- `password`: user password
+- `role`: User role, now there are just 3 available role:
+  - `A`: Admin
+  - `B`: Buyer
+  - `S`: Seller
+- An example request:
+
+  ```json
+  POST /auth/login
+  {
+    loginName: "user001",
+    password: "Pass123!@#",
+    role: "A",
+  }
+  ```
+
+**Response:**
+
+- **If valid credentials**, return the JWT, the client side can store this to local storage and later send back to server in every request header for authentication and authorization.
+
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbk5hbWUiOiJkZXB0cmFpIiwicm9sZSI6IkEiLCJpYXQiOjE3NjM3MTAwNzgsImV4cCI6MTc2MzcxMzY3OH0.vfASWJtJlQY5lsHX4PawVUEoNPCHX2MiBaZkh-qK_IM"
+  }
+  ```
+
+- **If invalid:** return a `404 - Invalid credentials` error.
+- **If incorrect role:** return `403 - Unauthorized role` error.
+- **If internal server error:** return a `500 - {Error}`.
+
+### `POST /auth/logout` - For loggin out of the page
+
+**Request:** a `POST /auth/logout`, after that, user delete the token on the client side and server invalidate that token.
+
+**Response:** a `200 - OK` HTTP response.
+
+## Seller API Endpoints
+
+Note: seller routes are mounted under the `/seller` prefix. Most seller actions require a valid JWT and role `S` (Seller) or `A` (Admin).
+
+### `GET /seller/products` - Get seller's products
+
+**Request:** `GET /seller/products` with a valid JWT (role `S` or `A`).
+**Response:** A list of the seller's products (brief information). Example format:
+
+```json
+[
+  {
+    "ProductID": 1,
+    "LoginName": "user001",
+    "ProductName": "iPhone 15 Pro",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Smartphone",
+    "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+    "ProductMadeIn": "USA",
+    "SKU": [
+      {
+        "ProductID": 1,
+        "SKUName": "128GB-Black",
+        "Size": 128,
+        "Price": 25990000,
+        "InStockNumber": 49,
+        "Weight": 187
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "128GB-White",
+        "Size": 128,
+        "Price": 25990000,
+        "InStockNumber": 45,
+        "Weight": 187
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "256GB-Black",
+        "Size": 256,
+        "Price": 28990000,
+        "InStockNumber": 40,
+        "Weight": 187
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "256GB-Blue",
+        "Size": 256,
+        "Price": 28990000,
+        "InStockNumber": 35,
+        "Weight": 187
+      }
+    ]
+  },
+  {
+    "ProductID": 2,
+    "LoginName": "user001",
+    "ProductName": "MacBook Air M2",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Laptop",
+    "ProductDescription": "13-inch laptop with M2 chip, 8GB RAM, 256GB SSD",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 2,
+        "SKUName": "16GB-512GB-Gold",
+        "Size": 512,
+        "Price": 37990000,
+        "InStockNumber": 20,
+        "Weight": 1240
+      },
+      {
+        "ProductID": 2,
+        "SKUName": "8GB-256GB-Silver",
+        "Size": 256,
+        "Price": 27990000,
+        "InStockNumber": 30,
+        "Weight": 1240
+      },
+      {
+        "ProductID": 2,
+        "SKUName": "8GB-512GB-Silver",
+        "Size": 512,
+        "Price": 32990000,
+        "InStockNumber": 25,
+        "Weight": 1240
+      }
+    ]
+  },
+  {
+    "ProductID": 3,
+    "LoginName": "user001",
+    "ProductName": "AirPods Pro 2",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Audio",
+    "ProductDescription": "Wireless earbuds with active noise cancellation",
+    "ProductMadeIn": "Vietnam",
+    "SKU": [
+      {
+        "ProductID": 3,
+        "SKUName": "Standard-White",
+        "Size": 0,
+        "Price": 6490000,
+        "InStockNumber": 99,
+        "Weight": 50
+      }
+    ]
+  },
+  {
+    "ProductID": 4,
+    "LoginName": "user001",
+    "ProductName": "iPad Air 5th Gen",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Tablet",
+    "ProductDescription": "10.9-inch tablet with M1 chip",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 4,
+        "SKUName": "256GB-Purple",
+        "Size": 256,
+        "Price": 18990000,
+        "InStockNumber": 30,
+        "Weight": 461
+      },
+      {
+        "ProductID": 4,
+        "SKUName": "64GB-Purple",
+        "Size": 64,
+        "Price": 14990000,
+        "InStockNumber": 40,
+        "Weight": 461
+      },
+      {
+        "ProductID": 4,
+        "SKUName": "64GB-Starlight",
+        "Size": 64,
+        "Price": 14990000,
+        "InStockNumber": 35,
+        "Weight": 461
+      }
+    ]
+  },
+  {
+    "ProductID": 5,
+    "LoginName": "user001",
+    "ProductName": "Apple Watch Series 9",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Smartwatch",
+    "ProductDescription": "Fitness and health tracking smartwatch",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 5,
+        "SKUName": "41mm-Cellular-Pink",
+        "Size": 41,
+        "Price": 13990000,
+        "InStockNumber": 30,
+        "Weight": 32
+      },
+      {
+        "ProductID": 5,
+        "SKUName": "41mm-GPS-Midnight",
+        "Size": 41,
+        "Price": 10990000,
+        "InStockNumber": 49,
+        "Weight": 32
+      },
+      {
+        "ProductID": 5,
+        "SKUName": "45mm-GPS-Starlight",
+        "Size": 45,
+        "Price": 12990000,
+        "InStockNumber": 40,
+        "Weight": 39
+      }
+    ]
+  }
+]
+```
+
+### `GET /seller/products/:id` - Get product details
+
+**Request:** `GET /seller/products/:id` with a valid JWT (role `S` or `A`). `:id` is the product id.
+**Response:** A dictionary of the product's details. Example:
+
+```json
+{
+  "ProductID": 1,
+  "LoginName": "user001",
+  "ProductName": "iPhone 15 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+  "ProductMadeIn": "USA",
+  "SKU": [
+    {
+      "ProductID": 1,
+      "SKUName": "128GB-Black",
+      "Size": 128,
+      "Price": 25990000,
+      "InStockNumber": 49,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "128GB-White",
+      "Size": 128,
+      "Price": 25990000,
+      "InStockNumber": 45,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "256GB-Black",
+      "Size": 256,
+      "Price": 28990000,
+      "InStockNumber": 40,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "256GB-Blue",
+      "Size": 256,
+      "Price": 28990000,
+      "InStockNumber": 35,
+      "Weight": 187,
+      "Comment": []
+    }
+  ]
+}
+```
+
+Each comment format is like this:
+
+```json
+{
+  "CommentID": // Int
+  "LoginName": // String
+  "ProductID": // Int
+  "SKUName": // String
+  "Ratings": // Int
+  "Content": // String
+  "ParentCommentID": // String
+  "Comment": [] // List of Comment answer to this comment.
+  "CommentImage": // Recently do not use this
+}
+```
+
+**Exception:**
+
+- Return a `404 - Product not found` if no product for the given `:id`.
+- Return a `400 - Invalid ProductID` if `:id` is not a number.
+
+### `PUT /seller/products/:id` - Edit product details
+
+**Request:** `PUT /seller/products/:id` with the body containing only fields to update (do not include `ProductID`). JWT required (role `S` or `A`). Example body:
+
+```json
+{
+  "LoginName": "user001",
+  "ProductName": "iPhone 16 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+  "ProductMadeIn": "USA"
+}
+```
+
+Do not include `ProductID` in the body — IDs are immutable. Modifying SKUs is not supported in the current version.
+
+**Response:** The modified product record (may omit nested SKUs and comments):
+
+```json
+{
+  "ProductID": 1,
+  "LoginName": "user001",
+  "ProductName": "iPhone 16 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+  "ProductMadeIn": "USA"
+}
+```
+
+**Exceptions:**
+
+- `404 - {error message}` if the `:id` is not found.
+- `400 - Invalid ProductID` if `:id` is not a number.
+- `500 - {error message}` for internal errors.
+
+### `POST /seller/products/add` - Add a new product
+
+**Request:** `POST /seller/products/add` with JWT (role `S` or `A`) and new product data in the body. Remember do not provide ProductID, if you procvide, server will ignore it and create product with the rest information
+
+```json
+{
+  "LoginName": "user001",
+  "ProductName": "iPhone 20 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with M4 Pro chip and titanium design",
+  "ProductMadeIn": "USA"
+}
+```
+
+**Response:** Newly created product record (format similar to product detail but without SKU and Comment):
+
+```json
+{
+  "ProductID": 11,
+  "LoginName": "user001",
+  "ProductName": "iPhone 20 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with M4 Pro chip and titanium design",
+  "ProductMadeIn": "USA"
+}
+```
+
+### `DELETE /seller/products/:id` - Delete a product
+
+**Request:** `DELETE /seller/products/:id` with JWT (role `S` or `A`).
+**Response:** `200 - OK` on success or `404` if not found.
+
+### `GET /seller/earnings` - View seller earnings
+
+**Request:** `GET /seller/earnings` with JWT (role `S` or `A`).
+**Response:** Summary object or list describing earnings for the authenticated seller:
+
+```json
+{
+  "earnings": 130410000
+}
+```
+
+### Notes about comments and SKUs
+
+- Comment structure is included in product details (see `Comment` example). Creating/replying to comments and mutating SKUs are TODOs and not supported yet.
+
+## Buyer API Endpoints
+
+Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are public; cart and order endpoints require JWT with role `B` (Buyer).
+
+### `GET /buyers/products` - Browse products (public)
+
+**Request:** `GET /buyers/products` (no JWT required).
+**Response:** List of products (brief information) similar to seller listing.
+
+```json
+[
+  {
+    "ProductID": 1,
+    "LoginName": "user001",
+    "ProductName": "iPhone 15 Pro",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Smartphone",
+    "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+    "ProductMadeIn": "USA",
+    "SKU": [
+      {
+        "ProductID": 1,
+        "SKUName": "128GB-Black",
+        "Size": 128,
+        "Price": 25990000,
+        "InStockNumber": 49,
+        "Weight": 187,
+        "Comment": []
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "128GB-White",
+        "Size": 128,
+        "Price": 25990000,
+        "InStockNumber": 45,
+        "Weight": 187,
+        "Comment": []
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "256GB-Black",
+        "Size": 256,
+        "Price": 28990000,
+        "InStockNumber": 40,
+        "Weight": 187,
+        "Comment": []
+      },
+      {
+        "ProductID": 1,
+        "SKUName": "256GB-Blue",
+        "Size": 256,
+        "Price": 28990000,
+        "InStockNumber": 35,
+        "Weight": 187,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 2,
+    "LoginName": "user001",
+    "ProductName": "MacBook Air M2",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Laptop",
+    "ProductDescription": "13-inch laptop with M2 chip, 8GB RAM, 256GB SSD",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 2,
+        "SKUName": "16GB-512GB-Gold",
+        "Size": 512,
+        "Price": 37990000,
+        "InStockNumber": 20,
+        "Weight": 1240,
+        "Comment": []
+      },
+      {
+        "ProductID": 2,
+        "SKUName": "8GB-256GB-Silver",
+        "Size": 256,
+        "Price": 27990000,
+        "InStockNumber": 30,
+        "Weight": 1240,
+        "Comment": []
+      },
+      {
+        "ProductID": 2,
+        "SKUName": "8GB-512GB-Silver",
+        "Size": 512,
+        "Price": 32990000,
+        "InStockNumber": 25,
+        "Weight": 1240,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 3,
+    "LoginName": "user001",
+    "ProductName": "AirPods Pro 2",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Audio",
+    "ProductDescription": "Wireless earbuds with active noise cancellation",
+    "ProductMadeIn": "Vietnam",
+    "SKU": [
+      {
+        "ProductID": 3,
+        "SKUName": "Standard-White",
+        "Size": 0,
+        "Price": 6490000,
+        "InStockNumber": 99,
+        "Weight": 50,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 4,
+    "LoginName": "user001",
+    "ProductName": "iPad Air 5th Gen",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Tablet",
+    "ProductDescription": "10.9-inch tablet with M1 chip",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 4,
+        "SKUName": "256GB-Purple",
+        "Size": 256,
+        "Price": 18990000,
+        "InStockNumber": 30,
+        "Weight": 461,
+        "Comment": []
+      },
+      {
+        "ProductID": 4,
+        "SKUName": "64GB-Purple",
+        "Size": 64,
+        "Price": 14990000,
+        "InStockNumber": 40,
+        "Weight": 461,
+        "Comment": []
+      },
+      {
+        "ProductID": 4,
+        "SKUName": "64GB-Starlight",
+        "Size": 64,
+        "Price": 14990000,
+        "InStockNumber": 35,
+        "Weight": 461,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 5,
+    "LoginName": "user001",
+    "ProductName": "Apple Watch Series 9",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Smartwatch",
+    "ProductDescription": "Fitness and health tracking smartwatch",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 5,
+        "SKUName": "41mm-Cellular-Pink",
+        "Size": 41,
+        "Price": 13990000,
+        "InStockNumber": 30,
+        "Weight": 32,
+        "Comment": []
+      },
+      {
+        "ProductID": 5,
+        "SKUName": "41mm-GPS-Midnight",
+        "Size": 41,
+        "Price": 10990000,
+        "InStockNumber": 49,
+        "Weight": 32,
+        "Comment": []
+      },
+      {
+        "ProductID": 5,
+        "SKUName": "45mm-GPS-Starlight",
+        "Size": 45,
+        "Price": 12990000,
+        "InStockNumber": 40,
+        "Weight": 39,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 6,
+    "LoginName": "user003",
+    "ProductName": "Samsung Galaxy S24 Ultra",
+    "ProductBrand": "Samsung",
+    "ProductCategory": "Smartphone",
+    "ProductDescription": "Flagship phone with S Pen and 200MP camera",
+    "ProductMadeIn": "South Korea",
+    "SKU": [
+      {
+        "ProductID": 6,
+        "SKUName": "256GB-Titanium-Gray",
+        "Size": 256,
+        "Price": 30990000,
+        "InStockNumber": 45,
+        "Weight": 233,
+        "Comment": []
+      },
+      {
+        "ProductID": 6,
+        "SKUName": "256GB-Titanium-Violet",
+        "Size": 256,
+        "Price": 30990000,
+        "InStockNumber": 40,
+        "Weight": 233,
+        "Comment": []
+      },
+      {
+        "ProductID": 6,
+        "SKUName": "512GB-Titanium-Black",
+        "Size": 512,
+        "Price": 35990000,
+        "InStockNumber": 35,
+        "Weight": 233,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 7,
+    "LoginName": "user003",
+    "ProductName": "Sony WH-1000XM5",
+    "ProductBrand": "Sony",
+    "ProductCategory": "Audio",
+    "ProductDescription": "Premium noise-cancelling headphones",
+    "ProductMadeIn": "Malaysia",
+    "SKU": [
+      {
+        "ProductID": 7,
+        "SKUName": "Standard-Black",
+        "Size": 0,
+        "Price": 8990000,
+        "InStockNumber": 60,
+        "Weight": 250,
+        "Comment": []
+      },
+      {
+        "ProductID": 7,
+        "SKUName": "Standard-Silver",
+        "Size": 0,
+        "Price": 8990000,
+        "InStockNumber": 50,
+        "Weight": 250,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 8,
+    "LoginName": "user003",
+    "ProductName": "Dell XPS 15",
+    "ProductBrand": "Dell",
+    "ProductCategory": "Laptop",
+    "ProductDescription": "15.6-inch laptop with Intel i7, 16GB RAM, 512GB SSD",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 8,
+        "SKUName": "i7-16GB-512GB",
+        "Size": 512,
+        "Price": 45990000,
+        "InStockNumber": 20,
+        "Weight": 1800,
+        "Comment": []
+      },
+      {
+        "ProductID": 8,
+        "SKUName": "i7-32GB-1TB",
+        "Size": 1024,
+        "Price": 55990000,
+        "InStockNumber": 15,
+        "Weight": 1800,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 9,
+    "LoginName": "user003",
+    "ProductName": "Samsung Galaxy Tab S9",
+    "ProductBrand": "Samsung",
+    "ProductCategory": "Tablet",
+    "ProductDescription": "11-inch Android tablet with S Pen included",
+    "ProductMadeIn": "Vietnam",
+    "SKU": [
+      {
+        "ProductID": 9,
+        "SKUName": "128GB-Beige",
+        "Size": 128,
+        "Price": 18990000,
+        "InStockNumber": 35,
+        "Weight": 498,
+        "Comment": []
+      },
+      {
+        "ProductID": 9,
+        "SKUName": "256GB-Graphite",
+        "Size": 256,
+        "Price": 21990000,
+        "InStockNumber": 30,
+        "Weight": 498,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 10,
+    "LoginName": "user003",
+    "ProductName": "Logitech MX Master 3S",
+    "ProductBrand": "Logitech",
+    "ProductCategory": "Accessories",
+    "ProductDescription": "Wireless ergonomic mouse for productivity",
+    "ProductMadeIn": "China",
+    "SKU": [
+      {
+        "ProductID": 10,
+        "SKUName": "Standard-Black",
+        "Size": 0,
+        "Price": 2490000,
+        "InStockNumber": 80,
+        "Weight": 141,
+        "Comment": []
+      },
+      {
+        "ProductID": 10,
+        "SKUName": "Standard-Gray",
+        "Size": 0,
+        "Price": 2490000,
+        "InStockNumber": 70,
+        "Weight": 141,
+        "Comment": []
+      }
+    ]
+  },
+  {
+    "ProductID": 11,
+    "LoginName": "user001",
+    "ProductName": "iPhone 20 Pro",
+    "ProductBrand": "Apple",
+    "ProductCategory": "Smartphone",
+    "ProductDescription": "Latest iPhone with M4 Pro chip and titanium design",
+    "ProductMadeIn": "USA",
+    "SKU": []
+  }
+]
+```
+
+### `GET /buyers/products/:id` - Product details (public)
+
+**Request:** `GET /buyers/products/:id` (no JWT required).
+**Response:** Product detail object (same structure as seller product detail):
+
+```json
+{
+  "ProductID": 1,
+  "LoginName": "user001",
+  "ProductName": "iPhone 15 Pro",
+  "ProductBrand": "Apple",
+  "ProductCategory": "Smartphone",
+  "ProductDescription": "Latest iPhone with A17 Pro chip and titanium design",
+  "ProductMadeIn": "USA",
+  "SKU": [
+    {
+      "ProductID": 1,
+      "SKUName": "128GB-Black",
+      "Size": 128,
+      "Price": 25990000,
+      "InStockNumber": 49,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "128GB-White",
+      "Size": 128,
+      "Price": 25990000,
+      "InStockNumber": 45,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "256GB-Black",
+      "Size": 256,
+      "Price": 28990000,
+      "InStockNumber": 40,
+      "Weight": 187,
+      "Comment": []
+    },
+    {
+      "ProductID": 1,
+      "SKUName": "256GB-Blue",
+      "Size": 256,
+      "Price": 28990000,
+      "InStockNumber": 35,
+      "Weight": 187,
+      "Comment": []
+    }
+  ]
+}
+```
+
+**Exception:** same as `GET /sellers/products/:id`.
+
+### `POST /buyers/cart` - Add item to cart / Edit quantity if already existed
+
+**Request:** `POST /buyers/cart` with JWT (role `B`). Body should include product/SKU identifier and `Quantity`. Example :
+
+```json
+{
+  "ProductID": 1,
+  "SKUName": "128GB-Black",
+  "Quantity": 2
+}
+```
+
+**Response:** Updated cart or created cart item. If quantity <= 0, return `400 - Quantity must be at least 1`.
+
+### `GET /buyers/cart` - Get current cart
+
+**Request:** `GET /buyers/cart` with JWT (role `B`).
+**Response:** Cart contents like this:
+
+```json
+{
+  "CartID": 2,
+  "LoginName": "user004",
+  "TotalCost": 0,
+  "StoredSKU": [
+    {
+      "CartID": 2,
+      "ProductID": 6,
+      "SKUName": "256GB-Titanium-Gray",
+      "Quantity": 1,
+      "SKU": {
+        "ProductID": 6,
+        "SKUName": "256GB-Titanium-Gray",
+        "Size": 256,
+        "Price": 30990000,
+        "InStockNumber": 45,
+        "Weight": 233,
+        "ProductInfo": {
+          "ProductID": 6,
+          "LoginName": "user003",
+          "ProductName": "Samsung Galaxy S24 Ultra",
+          "ProductBrand": "Samsung",
+          "ProductCategory": "Smartphone",
+          "ProductDescription": "Flagship phone with S Pen and 200MP camera",
+          "ProductMadeIn": "South Korea"
+        }
+      }
+    },
+    {
+      "CartID": 2,
+      "ProductID": 7,
+      "SKUName": "Standard-Black",
+      "Quantity": 1,
+      "SKU": {
+        "ProductID": 7,
+        "SKUName": "Standard-Black",
+        "Size": 0,
+        "Price": 8990000,
+        "InStockNumber": 60,
+        "Weight": 250,
+        "ProductInfo": {
+          "ProductID": 7,
+          "LoginName": "user003",
+          "ProductName": "Sony WH-1000XM5",
+          "ProductBrand": "Sony",
+          "ProductCategory": "Audio",
+          "ProductDescription": "Premium noise-cancelling headphones",
+          "ProductMadeIn": "Malaysia"
+        }
+      }
+    },
+    {
+      "CartID": 2,
+      "ProductID": 10,
+      "SKUName": "Standard-Black",
+      "Quantity": 1,
+      "SKU": {
+        "ProductID": 10,
+        "SKUName": "Standard-Black",
+        "Size": 0,
+        "Price": 2490000,
+        "InStockNumber": 80,
+        "Weight": 141,
+        "ProductInfo": {
+          "ProductID": 10,
+          "LoginName": "user003",
+          "ProductName": "Logitech MX Master 3S",
+          "ProductBrand": "Logitech",
+          "ProductCategory": "Accessories",
+          "ProductDescription": "Wireless ergonomic mouse for productivity",
+          "ProductMadeIn": "China"
+        }
+      }
+    }
+  ]
+}
+```
+
+### `DELETE /buyers/cart` - Remove an item from cart
+
+**Request:** `DELETE /buyers/cart` with JWT (role `B`). Body should identify which item to remove (ProductID and SKUName):
+
+```json
+{
+  "ProductID": 1,
+  "SKUName": "128GB-Black"
+}
+```
+
+**Response:** `200 - OK`.
+
+### `POST /buyers/order/create` - Create an order
+
+**Request:** `POST /buyers/order/create` with JWT (role `B`) and order details.
+
+```json
+{
+    "Skus": [
+        {
+            "ProductID": 1,
+            "SKUName": "128GB-Black",
+            "Quantity": 2
+        },
+        {
+            "ProductID": 1,
+            "SKUName": "128GB-White",
+            "Quantity": 3
+        }
+
+    ],
+    "AddressID": 6,
+    "ProviderName": "VCB",
+    "AccountID": 12321
+}
+```
+
+**Response:** Order confirmation including `OrderID` and status and the Order data:
+
+```json
+{
+    "OrderID": 10,
+    "LoginName": "user004",
+    "OrderDate": "2025-11-21T11:19:42.371Z",
+    "TotalPrice": 0,
+    "ProviderName": "VCB",
+    "AccountID": "12321",
+    "AddressID": 6
+}
+```
+
+### `GET /buyers/order/:id` - Get Order ID
+
+**Request:** Send `GET /buyer/order/:id` with `:id` is the order id
+**Response:** The order object with the following format:
+
+```json
+{
+    "OrderID": 2,
+    "LoginName": "user004",
+    "OrderDate": "2025-11-21T10:04:20.333Z",
+    "TotalPrice": 0,
+    "ProviderName": "VCB",
+    "AccountID": "36363636",
+    "AddressID": 6,
+    "SubOrderInfo": [],
+    "AddressInfo": {
+        "LoginName": "user004",
+        "AddressID": 6,
+        "ContactName": "Sarah Johnson",
+        "ContactPhoneNumber": "0934567890",
+        "City": "Ho Chi Minh City",
+        "District": "District 4",
+        "Commune": "Ward 5",
+        "DetailAddress": "321 Elm St",
+        "AddressType": "Home",
+        "IsAddressDefault": true
+    }
+}
+```
+
+## Admin API Endpoints
+
+Note: admin routes are mounted under `/admin` and require JWT with role `A` (Admin).
+
+### `GET /admin/sellers` - List all sellers
+
+**Request:** `GET /admin/sellers` with JWT (role `A`).
+**Response:** Array of seller accounts / brief seller information as returned by `adminController.listSellers`.
+
+### `GET /admin/sellers/:loginName` - Read seller details
+
+**Request:** `GET /admin/sellers/:loginName` with JWT (role `A`).
+**Response:** Full seller profile as returned by `adminController.readSeller`.
+
+### `GET /admin/buyers` - List all buyers
+
+**Request:** `GET /admin/buyers` with JWT (role `A`).
+**Response:** Array of buyer accounts / brief buyer information as returned by `adminController.listBuyers`.
+
+### `GET /admin/buyers/:loginName` - Read buyer details
+
+**Request:** `GET /admin/buyers/:loginName` with JWT (role `A`).
+**Response:** Full buyer profile as returned by `adminController.readBuyer`.
+
+**Notes:** Additional admin actions (create/edit/delete users, change roles, suspend accounts) are not implemented in the current routes (see commented TODOs in the code).
+
 ## How to build database for the project running on Docker
 
 - **Install Docker** if you don't have it already: `https://docs.docker.com/get-docker/`.
 - **Install the SQL Server image**
+
 ```bash
 docker pull mcr.microsoft.com/mssql/server:2019-latest
 ```
+
 - **Run the SQL Server container**
+
 ```bash
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
 -p 1433:1433 --name sqlserver \
 -d mcr.microsoft.com/mssql/server:2019-latest
 ```
+
 - Explain of the variable in the above command:
   - `ACCEPT_EULA`: You must accept the end user license agreement.
   - `SA_PASSWORD`: Set the password for the system administrator (SA) account. Make sure it meets SQL Server's password complexity requirements.

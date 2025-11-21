@@ -28,18 +28,30 @@ export const login = async (req: Request, res: Response) => {
     if (!loginName || !password || !role)
       return res.status(400).json({ error: "Missing credentials" });
 
+    // quick dev-only shortcut
     if (loginName === "deptrai" && password === "deptrai") {
-      const systemRole = "admin";
-      const token = generateToken({ loginName, systemRole });
-      return res.json({ token, systemRole });
+      const systemRole = "A";
+      const token = generateToken({ loginName, role: systemRole });
+      return res.json({ token });
     }
 
-    // const user = await userService.findByLoginName(loginName);
-    // if (!user || !(await comparePassword(password, user.Password)))
-    //   return res.status(400).json({ error: "Invalid credentials" });
-    // const role = user.Buyer ? "buyer" : user.Seller ? "seller" : "admin";
-    // const token = generateToken({ loginName: user.LoginName, role });
-    // res.json({ token, role });
+    // Lookup user in DB
+    const user = await userService.findByLoginName(loginName);
+    if (!user)
+      return res.status(400).json({ error: "Invalid credentials" });
+
+    // Compare password
+    const passwordMatches = await comparePassword(password, (user as any).Password);
+    if (!passwordMatches)
+      return res.status(400).json({ error: "Invalid credentials" });
+
+    // Determine role from relations
+    const actualRole = (user as any).Buyer ? "B" : (user as any).Seller ? "S" : "A";
+    if (role !== actualRole)
+      return res.status(403).json({ error: "Unauthorized role" });
+
+    const token = generateToken({ loginName: (user as any).LoginName, role: actualRole });
+    return res.json({ token });
   } catch (err) {
     res
       .status(500)

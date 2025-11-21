@@ -22,6 +22,7 @@ const addToCart = async (
 ) => {
   const cart = await prisma.cart.findFirst({ where: { LoginName: loginName } });
   if (!cart) throw new Error("Cart not found");
+
   return prisma.storedSKU.upsert({
     where: {
       ProductID_CartID_SKUName: {
@@ -94,32 +95,55 @@ const createOrder = async (
   providerName: string,
   accountID?: string | number | null
 ) => {
-  const accountIdValue = accountID == null ? null : String(accountID);
-  const order = await prisma.orderInfo.create({
-    data: {
-      LoginName: loginName,
-      AddressID: addressID,
-      ProviderName: providerName,
-      AccountID: accountIdValue,
-    },
-  });
-  const shopGroups = skus.reduce((acc: Record<string, any[]>, sku: any) => {
-    const shop = sku.productInfo.LoginName;
-    if (!acc[shop]) acc[shop] = [];
-    acc[shop].push(sku);
-    return acc;
-  }, {});
-  for (const shop in shopGroups) {
+  try {
+    if (!Array.isArray(skus) || skus.length === 0) {
+      throw new Error("Invalid order: skus must be a non-empty array");
+    }
+
+    const accountIdValue = accountID == null ? null : String(accountID);
+    const order = await prisma.orderInfo.create({
+      data: {
+        LoginName: loginName,
+        AddressID: addressID,
+        ProviderName: providerName,
+        AccountID: accountIdValue,
+      },
+    });
+
+    // Build a list of product IDs referenced by the request and validate
+    // they exist in the DB. We no longer split by seller/shop — create a
+    // single sub-order that contains all SKUs for this order.
+    const productIds = Array.from(
+      new Set(skus.map((s: any) => s.ProductID).filter((v: any) => v != null))
+    );
+
+    const products = productIds.length
+      ? await prisma.productInfo.findMany({
+          where: { ProductID: { in: productIds } },
+          select: { ProductID: true },
+        })
+      : [];
+
+    const existingIds = new Set(products.map((p) => p.ProductID));
+    for (const sku of skus) {
+      if (!existingIds.has(sku.ProductID)) {
+        throw new Error(`Product not found for ProductID=${sku.ProductID}`);
+      }
+    }
+
+    // Create a single sub-order for the whole order
     const subOrder = await prisma.subOrderInfo.create({
       data: {
         OrderID: order.OrderID,
         DeliveryMethodName: "Standard",
-        DeliveryProviderName: "Default",
+        DeliveryProviderName: "VNPost",
         ActualDate: new Date(),
         ExpectedDate: new Date(),
       },
     });
-    for (const sku of shopGroups[shop]) {
+
+    // Create details for every SKU under the single sub-order
+    for (const sku of skus) {
       await prisma.subOrderDetail.create({
         data: {
           OrderID: order.OrderID,
@@ -130,9 +154,43 @@ const createOrder = async (
         },
       });
     }
+
+    return order;
+  } catch (error) {
+    const originalMessage = error instanceof Error ? error.message : String(error);
+
+    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362")) {
+      throw new Error("Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost");
+    }
+
+    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29")) {
+      throw new Error("Invalid order: delivery method not found, choose among Economy, Express, Standard");
+    }
+    throw new Error(`Failed to create order for ${loginName}: ${originalMessage}`);
   }
-  return order;
 };
+
+const readOrderDetails = async (orderID: number) => {
+  return prisma.orderInfo.findUnique({
+    where: { OrderID: orderID },
+    include: {
+      SubOrderInfo: {
+        include: {
+          SubOrderDetail: {
+            include: {
+              SKU: {
+                include: {
+                  ProductInfo: true
+                },
+              },
+            },
+          },
+        },
+      },
+      AddressInfo: true,
+    },
+  });
+}
 
 export default {
   findMany,
@@ -142,4 +200,5 @@ export default {
   removeFromCart,
   updateCartQuantity,
   createOrder,
+  readOrderDetails,
 };

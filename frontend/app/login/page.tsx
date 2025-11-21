@@ -40,7 +40,7 @@ export default function Login() {
       const data = res.data;
       if (data.token) {
         login(data.token, data.role);
-        router.push("/");
+        router.push("/(root)/product");
       } else {
         setError("Invalid credentials");
       }
