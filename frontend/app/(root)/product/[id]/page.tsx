@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Minus, Plus, User } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
@@ -10,7 +10,7 @@ import formatVND from "../../../../utils/formatVND";
 export default function ProductDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,8 +23,9 @@ export default function ProductDetailPage({
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
+        const resolvedParams = await params;
         const response = await api.get(
-          API_PATHS.BUYER.PRODUCTS.DETAIL(params.id)
+          API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
         );
         const productData = response.data;
         setProduct(productData);
@@ -55,7 +56,7 @@ export default function ProductDetailPage({
     };
 
     fetchProductDetails();
-  }, [params.id]);
+  }, [params]);
 
   const handleAddToCart = () => {
     alert(`Added ${quantity} item(s) to cart!`);
