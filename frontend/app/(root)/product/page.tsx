@@ -5,7 +5,7 @@ import ProductCard, { ProductCardProps } from "../../../components/ProductCard";
 import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
 
-export default function HomePage() {
+export default function ProductList() {
   const [products, setProducts] = useState<ProductCardProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);

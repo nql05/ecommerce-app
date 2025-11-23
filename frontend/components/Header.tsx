@@ -33,7 +33,7 @@ export default function Header() {
     <header className="w-full border-b border-gray-200 fixed top-0 bg-white z-50">
       <Layout>
         <div className="flex justify-between items-center py-4">
-          <Link href="/home" className="text-3xl font-semibold text-brand">
+          <Link href="/product" className="text-3xl font-semibold text-brand">
             E-Shop
           </Link>
           {onHome ? (
