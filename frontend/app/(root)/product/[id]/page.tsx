@@ -58,8 +58,23 @@ export default function ProductDetailPage({
     fetchProductDetails();
   }, [params]);
 
-  const handleAddToCart = () => {
-    alert(`Added ${quantity} item(s) to cart!`);
+  const handleAddToCart = async () => {
+    try {
+      await api.post(API_PATHS.BUYER.CART.GET, {
+        productID: product.ProductID,
+        skuName: selectedSku,
+        quantity: quantity,
+      });
+      alert(`Added ${quantity} item(s) to cart!`);
+      setQuantity(1); // Reset quantity
+    } catch (err: any) {
+      if (err.response?.status === 400 || err.response?.status === 401) {
+        alert("Please login as a buyer to add items to cart.");
+      } else {
+        alert("Failed to add to cart. Please try again.");
+      }
+      console.log(err);
+    }
   };
 
   const handleSubmitComment = (e: React.FormEvent) => {

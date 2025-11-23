@@ -12,7 +12,7 @@ export default function RoleSelection() {
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Link
-            href="/login?role=B"
+            href="/login?role=buyer"
             className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
           >
             <ShoppingBag
@@ -23,7 +23,7 @@ export default function RoleSelection() {
           </Link>
 
           <Link
-            href="/login?role=S"
+            href="/login?role=seller"
             className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
           >
             <Store
@@ -34,7 +34,7 @@ export default function RoleSelection() {
           </Link>
 
           <Link
-            href="/login?role=A"
+            href="/login?role=admin"
             className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
           >
             <Shield

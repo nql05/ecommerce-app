@@ -8,7 +8,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 export default function Login() {
   const searchParams = useSearchParams();
-  const role = searchParams.get("role") || "B"; // Default to Buyer
+  const role = searchParams.get("role") || "buyer"; // Default to buyer
   const [loginName, setLoginName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,11 +17,11 @@ export default function Login() {
 
   const getRoleDisplay = () => {
     switch (role) {
-      case "B":
+      case "buyer":
         return "Buyer";
-      case "S":
+      case "seller":
         return "Seller";
-      case "A":
+      case "admin":
         return "Admin";
       default:
         return "User";
