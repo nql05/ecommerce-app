@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/auth', authRoutes);
-app.use('/buyers', buyerRoutes);
+app.use('/buyer', buyerRoutes);
 app.use('/seller', sellerRoutes);
 app.use('/admin', adminRoutes);
 
