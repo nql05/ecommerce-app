@@ -11,31 +11,40 @@ export default function Cart() {
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   useEffect(() => {
     fetchCart();
   }, []);
 
-  const fetchCart = () => {
-    api
-      .get(API_PATHS.BUYER.CART.GET)
-      .then((res) => setCart(res.data))
-      .catch((err) => {
-        if (err.response && err.response.status === 400) {
-          setError("You must be logged in as a buyer to view your cart.");
-        } else if (err.response && err.response.status === 404) {
-          setError("Cart not found.");
-        } else {
-          setError("Failed to load cart.");
-        }
-      })
-      .finally(() => setLoading(false));
+  const fetchCart = async () => {
+    try {
+      const res = await api.get(API_PATHS.BUYER.CART.GET);
+      setCart(res.data);
+    } catch (err: any) {
+      if (err.response?.status === 400) {
+        setError("You must be logged in as a buyer to view your cart.");
+      } else if (err.response?.status === 404) {
+        setError("Cart not found.");
+      } else {
+        setError("Failed to load cart.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateQuantity = async (productID: number, skuName: string, newQuantity: number) => {
+  const updateQuantity = async (
+    productID: number,
+    skuName: string,
+    newQuantity: number
+  ) => {
     if (newQuantity < 1) return;
     try {
-      await api.put(API_PATHS.BUYER.CART.GET, { productID, skuName, quantity: newQuantity });
+      await api.put(API_PATHS.BUYER.CART.GET, {
+        productID,
+        skuName,
+        quantity: newQuantity,
+      });
       fetchCart();
     } catch (err) {
       console.error("Failed to update quantity:", err);
@@ -44,7 +53,9 @@ export default function Cart() {
 
   const removeItem = async (productID: number, skuName: string) => {
     try {
-      await api.delete(API_PATHS.BUYER.CART.GET, { data: { productID, skuName } });
+      await api.delete(API_PATHS.BUYER.CART.GET, {
+        data: { productID, skuName },
+      });
       fetchCart();
     } catch (err) {
       console.error("Failed to remove item:", err);
@@ -53,8 +64,9 @@ export default function Cart() {
 
   const calculateTotal = () => {
     if (!cart?.StoredSKU) return 0;
-    return cart.StoredSKU.reduce((sum: number, item: any) => 
-      sum + (item.SKU.Price * item.Quantity), 0
+    return cart.StoredSKU.reduce(
+      (sum: number, item: any) => sum + item.SKU.Price * item.Quantity,
+      0
     );
   };
 
@@ -81,7 +93,9 @@ export default function Cart() {
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-4">
                 {cart.StoredSKU.map((item: any) => {
-                  const imageUrl = item.SKU?.SKUImage?.[0]?.SKU_URL || "https://via.placeholder.com/100?text=No+Image";
+                  const imageUrl =
+                    item.SKU?.SKUImage?.[0]?.SKU_URL ||
+                    "https://via.placeholder.com/100?text=No+Image";
                   return (
                     <div
                       key={`${item.ProductID}-${item.SKUName}`}
@@ -96,7 +110,7 @@ export default function Cart() {
                           className="object-cover"
                         />
                       </div>
-                      
+
                       {/* Product Details */}
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg mb-1">
@@ -109,25 +123,41 @@ export default function Cart() {
                           {formatVND(item.SKU.Price)}
                         </p>
                       </div>
-                      
+
                       {/* Quantity Controls */}
                       <div className="flex flex-col items-end gap-4">
                         <button
-                          onClick={() => removeItem(item.ProductID, item.SKUName)}
+                          onClick={() =>
+                            removeItem(item.ProductID, item.SKUName)
+                          }
                           className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
                         <div className="flex items-center border-2 border-gray-300 rounded-lg">
                           <button
-                            onClick={() => updateQuantity(item.ProductID, item.SKUName, item.Quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.ProductID,
+                                item.SKUName,
+                                item.Quantity - 1
+                              )
+                            }
                             className="p-2 hover:bg-gray-100"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="px-4 font-semibold">{item.Quantity}</span>
+                          <span className="px-4 font-semibold">
+                            {item.Quantity}
+                          </span>
                           <button
-                            onClick={() => updateQuantity(item.ProductID, item.SKUName, item.Quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.ProductID,
+                                item.SKUName,
+                                item.Quantity + 1
+                              )
+                            }
                             className="p-2 hover:bg-gray-100"
                           >
                             <Plus className="w-4 h-4" />
@@ -138,7 +168,7 @@ export default function Cart() {
                   );
                 })}
               </div>
-              
+
               {/* Order Summary */}
               <div className="lg:col-span-1">
                 <div className="bg-white border border-gray-200 rounded-lg p-6 sticky top-24">
@@ -146,15 +176,21 @@ export default function Cart() {
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Subtotal</span>
-                      <span className="font-semibold">{formatVND(calculateTotal())}</span>
+                      <span className="font-semibold">
+                        {formatVND(calculateTotal())}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Shipping</span>
-                      <span className="text-sm text-gray-500">Calculated at checkout</span>
+                      <span className="text-sm text-gray-500">
+                        Calculated at checkout
+                      </span>
                     </div>
                     <div className="border-t pt-3 flex justify-between text-lg">
                       <span className="font-bold">Total</span>
-                      <span className="font-bold text-brand">{formatVND(calculateTotal())}</span>
+                      <span className="font-bold text-brand">
+                        {formatVND(calculateTotal())}
+                      </span>
                     </div>
                   </div>
                   <button className="w-full bg-brand text-white py-3 rounded-full font-semibold hover:bg-opacity-90 transition">
