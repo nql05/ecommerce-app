@@ -17,7 +17,7 @@ export default function Header() {
     if (onHome) {
       fetchCartCount();
     }
-  }, [onHome, pathname]);
+  }, [pathname]);
 
   const fetchCartCount = async () => {
     try {

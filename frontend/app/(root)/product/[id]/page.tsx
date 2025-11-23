@@ -20,6 +20,10 @@ export default function ProductDetailPage({
   const [comments, setComments] = useState<any[]>([]);
 
   useEffect(() => {
+    setQuantity(1);
+  }, [selectedSku]);
+
+  useEffect(() => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
@@ -44,7 +48,6 @@ export default function ProductDetailPage({
                 username: comment.LoginName,
                 comment: comment.Content || "No comment text",
                 rating: comment.Ratings,
-                timestamp: new Date(comment.CommentID).toLocaleDateString(), // Using ID as proxy for date
               })) || []
           ) || [];
         setComments(allComments);
@@ -290,9 +293,6 @@ export default function ProductDetailPage({
                           {"☆".repeat(5 - comment.rating)}
                         </div>
                       )}
-                      <span className="text-sm text-gray-500">
-                        {comment.timestamp}
-                      </span>
                     </div>
                     <p className="text-gray-700">{comment.comment}</p>
                     <button className="text-sm text-brand font-semibold hover:underline">

@@ -28,7 +28,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
-, "utils/formatVND.js"  ],
+, "utils/formatVND.ts"  ],
   "exclude": [
     "node_modules"
   ]
