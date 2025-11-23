@@ -5,13 +5,7 @@ import Image from "next/image";
 import { Minus, Plus, User } from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
-
-function formatVND(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
-}
+import formatVND from "../../../../utils/formatVND";
 
 export default function ProductDetailPage({
   params,

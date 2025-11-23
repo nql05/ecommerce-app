@@ -3,19 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import formatVND from "../utils/formatVND";
 
 export interface ProductCardProps {
   id?: number;
   imageUrl: string;
   name: string;
   price: number; // raw number in VND
-}
-
-function formatVND(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
 }
 
 export default function ProductCard({

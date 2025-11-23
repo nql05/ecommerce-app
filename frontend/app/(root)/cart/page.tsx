@@ -5,13 +5,7 @@ import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
 import Image from "next/image";
 import { Trash2, Plus, Minus } from "lucide-react";
-
-function formatVND(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
-}
+import formatVND from "../../../utils/formatVND";
 
 export default function Cart() {
   const [cart, setCart] = useState<any>(null);
