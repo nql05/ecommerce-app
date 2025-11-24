@@ -52,9 +52,8 @@ export default function Cart() {
         SKUName,
         Quantity,
       });
-    } catch (err) {
-      console.error("Failed to update quantity:", err);
-      alert("Failed to update quantity");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to update quantity");
       fetchCart(); // Refresh cart on error
     }
   };
@@ -185,16 +184,16 @@ export default function Cart() {
       if (!confirm("Are you sure you want to delete all items from cart?")) {
         return;
       }
+    } else if (
+      !confirm("Are you sure you want to delete these items from cart?")
+    ) {
+      return;
     }
 
     if (selectedItems.size === 1) {
       if (!confirm("Are you sure you want to delete this item from cart?")) {
         return;
       }
-    }
-
-    if (!confirm("Are you sure you want to delete these items from cart?")) {
-      return;
     }
 
     try {

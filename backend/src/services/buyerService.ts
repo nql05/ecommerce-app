@@ -23,7 +23,36 @@ const addToCart = async (
   const cart = await prisma.cart.findFirst({ where: { LoginName: loginName } });
   if (!cart) throw new Error("Cart not found");
 
-  return prisma.storedSKU.upsert({
+  // Get the SKU to check price and validate
+  const sku = await prisma.sKU.findUnique({
+    where: {
+      ProductID_SKUName: {
+        ProductID: productID,
+        SKUName: skuName,
+      },
+    },
+  });
+
+  if (!sku) {
+    throw new Error(
+      `SKU not found: ProductID=${productID}, SKUName=${skuName}`
+    );
+  }
+
+  // Validate quantity to prevent overflow (INT max is 2,147,483,647)
+  // If Price * Quantity would exceed INT max, reject it
+  const maxSafeQuantity = Math.floor(2147483647 / sku.Price);
+  if (quantity > maxSafeQuantity) {
+    throw new Error(`Quantity too large. Maximum allowed: ${maxSafeQuantity}`);
+  }
+
+  // Validate against stock
+  if (quantity > sku.InStockNumber) {
+    throw new Error(`Insufficient stock. Available: ${sku.InStockNumber}`);
+  }
+
+  // Check if item already exists in cart
+  const existingItem = await prisma.storedSKU.findUnique({
     where: {
       ProductID_CartID_SKUName: {
         ProductID: productID,
@@ -31,14 +60,31 @@ const addToCart = async (
         SKUName: skuName,
       },
     },
-    update: { Quantity: { increment: quantity } },
-    create: {
-      CartID: cart.CartID,
-      ProductID: productID,
-      SKUName: skuName,
-      Quantity: quantity,
-    },
   });
+
+  if (existingItem) {
+    // Item exists: SET to new quantity (don't increment)
+    return prisma.storedSKU.update({
+      where: {
+        ProductID_CartID_SKUName: {
+          ProductID: productID,
+          CartID: cart.CartID,
+          SKUName: skuName,
+        },
+      },
+      data: { Quantity: quantity },
+    });
+  } else {
+    // Item doesn't exist: CREATE new
+    return prisma.storedSKU.create({
+      data: {
+        CartID: cart.CartID,
+        ProductID: productID,
+        SKUName: skuName,
+        Quantity: quantity,
+      },
+    });
+  }
 };
 
 const getCart = async (loginName: string) => {
