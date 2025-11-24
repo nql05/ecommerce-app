@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Image from "next/image";
 import { Minus, Plus } from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
+import { CartContext } from "../../../../context/CartContext";
 
 export default function ProductDetailPage({
   params,
@@ -18,6 +19,7 @@ export default function ProductDetailPage({
   const [quantity, setQuantity] = useState(1);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<any[]>([]);
+  const cartContext = useContext(CartContext);
 
   useEffect(() => {
     setQuantity(1);
@@ -69,6 +71,7 @@ export default function ProductDetailPage({
         Quantity: quantity,
       });
       alert(`Added ${quantity} item(s) to cart!`);
+      await cartContext?.fetchCartCount();
       setQuantity(1); // Reset quantity
     } catch (err: any) {
       if (err.response?.status === 400 || err.response?.status === 401) {

@@ -4,30 +4,18 @@ import Link from "next/link";
 import Layout from "./AppLayout";
 import { usePathname } from "next/navigation";
 import { User, ShoppingCart } from "lucide-react";
-import { useEffect, useState } from "react";
-import api from "../lib/api";
-import { API_PATHS } from "../lib/apiPath";
+import { useEffect, useContext } from "react";
+import { CartContext } from "../context/CartContext";
 
 export default function Header() {
   const pathname = usePathname();
   const onHome = pathname !== "/"; // adjust if root path differs
-  const [cartCount, setCartCount] = useState(0);
+  const cartContext = useContext(CartContext);
+  const cartCount = cartContext?.cartCount || 0;
 
   useEffect(() => {
-    if (onHome) {
-      fetchCartCount();
-    }
-  }, [pathname]);
-
-  const fetchCartCount = async () => {
-    try {
-      const res = await api.get(API_PATHS.BUYER.CART.GET);
-      const count = res.data?.StoredSKU?.length || 0;
-      setCartCount(count);
-    } catch (err) {
-      setCartCount(0);
-    }
-  };
+    cartContext?.fetchCartCount();
+  }, [cartContext]);
 
   return (
     <header className="w-full border-b border-gray-200 fixed top-0 bg-white z-50">
@@ -52,7 +40,7 @@ export default function Header() {
               >
                 <ShoppingCart className="w-7 h-7 text-brand" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute top-1 right-1 bg-brand text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-white border-2 leading-none">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}
