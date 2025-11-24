@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useContext } from "react";
 import Image from "next/image";
-import { Minus, Plus } from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
 import { CartContext } from "../../../../context/CartContext";
+import QuantityCounter from "../../../../components/QuantityCounter";
 
 export default function ProductDetailPage({
   params,
@@ -183,26 +183,16 @@ export default function ProductDetailPage({
           {/* Quantity Counter */}
           <div className="mb-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center border-2 border-gray-300 rounded-full">
-                <button
-                  onClick={decrementQty}
-                  className="p-3 hover:bg-gray-100 transition rounded-l-full"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="px-6 font-semibold">{quantity}</span>
-                <button
-                  onClick={incrementQty}
-                  className="p-3 hover:bg-gray-100 transition rounded-r-full"
-                  aria-label="Increase quantity"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              <QuantityCounter
+                quantity={quantity}
+                maxStock={stock}
+                onIncrement={incrementQty}
+                onDecrement={decrementQty}
+                size="medium"
+              />
               <div className="text-sm">
                 <span className="text-orange-500 font-semibold">
-                  Only {stock} Items Left!
+                  Only {stock} {stock > 1 ? "Items" : "Item"} Left!
                 </span>
                 <br />
                 <span className="text-gray-600">Don't miss it</span>
