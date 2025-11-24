@@ -14,8 +14,9 @@ export default function Header() {
   const cartCount = cartContext?.cartCount || 0;
 
   useEffect(() => {
-    cartContext?.fetchCartCount();
-  }, [cartContext]);
+    if (onHome)
+      cartContext?.fetchCartCount();
+  }, [cartContext, onHome]);
 
   return (
     <header className="w-full border-b border-gray-200 fixed top-0 bg-white z-50">
