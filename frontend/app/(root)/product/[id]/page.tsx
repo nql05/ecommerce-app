@@ -64,9 +64,9 @@ export default function ProductDetailPage({
   const handleAddToCart = async () => {
     try {
       await api.post(API_PATHS.BUYER.CART.GET, {
-        productID: product.ProductID,
-        skuName: selectedSku,
-        quantity: quantity,
+        ProductID: product.ProductID,
+        SKUName: selectedSku,
+        Quantity: quantity,
       });
       alert(`Added ${quantity} item(s) to cart!`);
       setQuantity(1); // Reset quantity
