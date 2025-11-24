@@ -16,7 +16,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRoutes);
-app.use('/buyers', buyerRoutes);
+app.use('/buyer', buyerRoutes);
 app.use('/seller', sellerRoutes);
 app.use('/admin', adminRoutes);
 
