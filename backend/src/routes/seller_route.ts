@@ -8,7 +8,7 @@ const router = express.Router();
 router.get(
   "/products",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.listProducts
 );
 
@@ -16,7 +16,7 @@ router.get(
 router.post(
   "/products/add",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.addProduct
 );
 
@@ -24,7 +24,7 @@ router.post(
 router.get(
   "/products/:id",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.readProduct
 );
 
@@ -32,7 +32,7 @@ router.get(
 router.put(
   "/products/:id",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.editProduct
 );
 
@@ -40,7 +40,7 @@ router.put(
 router.delete(
   "/products/:id",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.removeProduct
 );
 
@@ -48,7 +48,7 @@ router.delete(
 router.get(
   "/earnings",
   authenticate,
-  authorize(["seller"]),
+  authorize(["S", "A"]),
   sellerController.earnings
 );
 

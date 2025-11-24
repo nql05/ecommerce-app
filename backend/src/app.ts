@@ -9,6 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Simple request logger to aid debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 app.use('/auth', authRoutes);
 app.use('/buyer', buyerRoutes);
 app.use('/seller', sellerRoutes);

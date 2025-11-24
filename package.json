@@ -1,5 +1,17 @@
 {
-  "dependencies": {
-    "lucide-react": "^0.554.0"
+  "name": "ecommerce-app",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:frontend": "npm --prefix frontend run start",
+    "build:backend": "npm --prefix backend run build",
+    "start:backend": "npm --prefix backend run start"
   }
 }

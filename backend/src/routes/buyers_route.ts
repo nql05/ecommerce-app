@@ -10,39 +10,35 @@ router.get("/products/:id", buyerController.getProductDetails);
 router.post(
   "/cart",
   authenticate,
-  authorize(["buyer"]),
+  authorize(["B", "A"]),
   buyerController.addToCart
 );
 router.get(
   "/cart",
   authenticate,
-  authorize(["buyer"]),
+  authorize(["B", "A"]),
   buyerController.getCart
 );
-router.put(
-  "/cart",
-  authenticate,
-  authorize(["buyer"]),
-  buyerController.updateCart
-);
+
 router.delete(
   "/cart",
   authenticate,
-  authorize(["buyer"]),
+  authorize(["B", "A"]),
   buyerController.removeFromCart
 );
 
 router.post(
   "/order/create",
   authenticate,
-  authorize(["buyer"]),
+  authorize(["B", "A"]),
   buyerController.createOrder
 );
-router.post(
+
+router.get(
   "/order/:id",
   authenticate,
-  authorize(["seller"]),
-  buyerController.listProducts
+  authorize(["B", "A"]),
+  buyerController.readOrderDetails
 );
 
 export default router;

@@ -3,12 +3,25 @@ import adminService from "../services/adminService";
 
 export const listSellers = async (req: Request, res: Response) => {
   const users = await adminService.listSellers();
-  res.json(users);
+
+  // Get Seller only
+  const sellers = users.filter((user) => {
+      return user.Seller !== null;
+  });
+
+  res.json(sellers);
 };
 
 export const listBuyers = async (req: Request, res: Response) => {
   const users = await adminService.listBuyers();
-  res.json(users);
+
+  // Get Buyer only
+  const buyers = users.filter((user) => {
+    return user.Buyer !== null;
+  });
+
+
+  res.json(buyers);
 };
 
 export const readSeller = async (req: Request, res: Response) => {
