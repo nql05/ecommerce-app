@@ -124,7 +124,7 @@ const createOrder = async (
         })
       : [];
 
-    const existingIds = new Set(products.map((p) => p.ProductID));
+    const existingIds = new Set(products.map((p: any) => p.ProductID));
     for (const sku of skus) {
       if (!existingIds.has(sku.ProductID)) {
         throw new Error(`Product not found for ProductID=${sku.ProductID}`);
@@ -157,16 +157,31 @@ const createOrder = async (
 
     return order;
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
 
-    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362")) {
-      throw new Error("Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost");
+    if (
+      originalMessage.includes(
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362"
+      )
+    ) {
+      throw new Error(
+        "Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost"
+      );
     }
 
-    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29")) {
-      throw new Error("Invalid order: delivery method not found, choose among Economy, Express, Standard");
+    if (
+      originalMessage.includes(
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29"
+      )
+    ) {
+      throw new Error(
+        "Invalid order: delivery method not found, choose among Economy, Express, Standard"
+      );
     }
-    throw new Error(`Failed to create order for ${loginName}: ${originalMessage}`);
+    throw new Error(
+      `Failed to create order for ${loginName}: ${originalMessage}`
+    );
   }
 };
 
@@ -180,7 +195,7 @@ const readOrderDetails = async (orderID: number) => {
             include: {
               SKU: {
                 include: {
-                  ProductInfo: true
+                  ProductInfo: true,
                 },
               },
             },
@@ -190,7 +205,7 @@ const readOrderDetails = async (orderID: number) => {
       AddressInfo: true,
     },
   });
-}
+};
 
 export default {
   findMany,

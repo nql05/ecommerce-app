@@ -1,4 +1,11 @@
 import { Prisma } from "@prisma/client";
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+  PrismaClientUnknownRequestError,
+  PrismaClientRustPanicError,
+  PrismaClientInitializationError,
+} from "@prisma/client/runtime/library";
 
 export type ParsedPrismaError = {
   status: number;
@@ -14,7 +21,7 @@ export type ParsedPrismaError = {
  */
 export function parsePrismaError(error: unknown): ParsedPrismaError {
   // Known Prisma client request errors (constraint violations, not found, etc.)
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  if (error instanceof PrismaClientKnownRequestError) {
     const code = error.code;
     const meta = (error as any).meta;
 
@@ -24,7 +31,9 @@ export function parsePrismaError(error: unknown): ParsedPrismaError {
         return {
           status: 409,
           code,
-          message: `Unique constraint failed${meta?.target ? ` on ${JSON.stringify(meta.target)}` : ""}`,
+          message: `Unique constraint failed${
+            meta?.target ? ` on ${JSON.stringify(meta.target)}` : ""
+          }`,
           details: meta,
         };
 
@@ -33,7 +42,9 @@ export function parsePrismaError(error: unknown): ParsedPrismaError {
         return {
           status: 400,
           code,
-          message: `Foreign key constraint failed${meta?.field_name ? ` on ${meta.field_name}` : ""}`,
+          message: `Foreign key constraint failed${
+            meta?.field_name ? ` on ${meta.field_name}` : ""
+          }`,
           details: meta,
         };
 
@@ -57,15 +68,18 @@ export function parsePrismaError(error: unknown): ParsedPrismaError {
   }
 
   // Validation errors produced by Prisma client (bad query shape)
-  if (error instanceof Prisma.PrismaClientValidationError) {
+  if (error instanceof PrismaClientValidationError) {
     return { status: 400, message: error.message };
   }
 
   // Unknown request error (connector-level issues)
-  if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+  if (error instanceof PrismaClientUnknownRequestError) {
     // Try to map common connector messages to user-friendly text
     const msg = (error as any).message ?? String(error);
-    if (msg.includes("IDENTITY_INSERT") || msg.includes("Cannot insert explicit value for identity column")) {
+    if (
+      msg.includes("IDENTITY_INSERT") ||
+      msg.includes("Cannot insert explicit value for identity column")
+    ) {
       return {
         status: 400,
         message:
@@ -74,11 +88,18 @@ export function parsePrismaError(error: unknown): ParsedPrismaError {
       };
     }
 
-    return { status: 500, message: "Database connector error", details: { raw: msg } };
+    return {
+      status: 500,
+      message: "Database connector error",
+      details: { raw: msg },
+    };
   }
 
   // Other Prisma errors
-  if (error instanceof Prisma.PrismaClientRustPanicError || error instanceof Prisma.PrismaClientInitializationError) {
+  if (
+    error instanceof PrismaClientRustPanicError ||
+    error instanceof PrismaClientInitializationError
+  ) {
     return { status: 500, message: "Internal database error" };
   }
 
@@ -87,7 +108,10 @@ export function parsePrismaError(error: unknown): ParsedPrismaError {
     const msg = error.message || String(error);
 
     // Heuristic: map SQL Server identity-insert messages if Prisma wrapped them differently
-    if (msg.includes("IDENTITY_INSERT") || msg.includes("Cannot insert explicit value for identity column")) {
+    if (
+      msg.includes("IDENTITY_INSERT") ||
+      msg.includes("Cannot insert explicit value for identity column")
+    ) {
       return {
         status: 400,
         message:

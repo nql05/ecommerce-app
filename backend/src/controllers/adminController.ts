@@ -5,8 +5,8 @@ export const listSellers = async (req: Request, res: Response) => {
   const users = await adminService.listSellers();
 
   // Get Seller only
-  const sellers = users.filter((user) => {
-      return user.Seller !== null;
+  const sellers = users.filter((user: any) => {
+    return user.Seller !== null;
   });
 
   res.json(sellers);
@@ -16,10 +16,9 @@ export const listBuyers = async (req: Request, res: Response) => {
   const users = await adminService.listBuyers();
 
   // Get Buyer only
-  const buyers = users.filter((user) => {
+  const buyers = users.filter((user: any) => {
     return user.Buyer !== null;
   });
-
 
   res.json(buyers);
 };
