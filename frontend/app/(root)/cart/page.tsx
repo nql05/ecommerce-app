@@ -184,16 +184,14 @@ export default function Cart() {
       if (!confirm("Are you sure you want to delete all items from cart?")) {
         return;
       }
+    } else if (selectedItems.size === 1) {
+      if (!confirm("Are you sure you want to delete this item from cart?")) {
+        return;
+      }
     } else if (
       !confirm("Are you sure you want to delete these items from cart?")
     ) {
       return;
-    }
-
-    if (selectedItems.size === 1) {
-      if (!confirm("Are you sure you want to delete this item from cart?")) {
-        return;
-      }
     }
 
     try {

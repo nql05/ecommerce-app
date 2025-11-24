@@ -103,6 +103,10 @@ export default function ProductDetailPage({
     if (quantity > 1) setQuantity(quantity - 1);
   };
 
+  const handleQuantityChange = (value: number) => {
+    setQuantity(value);
+  };
+
   if (loading) {
     return (
       <main className="pt-24 pb-16">
@@ -188,6 +192,7 @@ export default function ProductDetailPage({
                 maxStock={stock}
                 onIncrement={incrementQty}
                 onDecrement={decrementQty}
+                onChange={handleQuantityChange}
                 size="medium"
               />
               <div className="text-sm">
