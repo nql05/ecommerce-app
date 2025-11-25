@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 
-export default function Home() {
-  // TODO: Implement API call to fetch products
-  // const [products, setProducts] = useState([]);
-  // useEffect(() => {
-  //   api.get('/products').then(res => setProducts(res.data || []));
-  // }, []);
-
-  return (
+export default function LandingPage() {
+return (
     <>
       <div className="pt-40">
         <div className="max-w-4xl space-y-6">
