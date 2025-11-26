@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
 import Image from "next/image";
@@ -22,11 +23,22 @@ interface CartItem {
   };
 }
 
+interface Address {
+  AddressID: number;
+  ContactName: string;
+  ContactPhoneNumber: string;
+  City: string;
+  District: string;
+  Commune: string;
+  DetailAddress: string;
+  AddressType: string;
+  IsAddressDefault: boolean;
+}
+
 const deliveryProviders = [
-  { name: "VNPost", fee: 32700 },
-  { name: "GHN", fee: 35000 },
-  { name: "J&T Express", fee: 30000 },
-  { name: "Viettel Post", fee: 33000 },
+  { name: "VNPost", fee: 36363, method: "Standard" },
+  { name: "GrabExpress", fee: 36363, method: "Express" },
+  { name: "Giao Hang Nhanh", fee: 36363, method: "Economy" },
 ];
 
 export default function CheckoutPage() {
@@ -35,17 +47,36 @@ export default function CheckoutPage() {
   const [selectedItems, setSelectedItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [accountID, setAccountID] = useState("");
-  const [providerName, setProviderName] = useState("Techcombank");
+  const [providerName, setProviderName] = useState("VCB");
   const [deliveryProvider, setDeliveryProvider] = useState(
     deliveryProviders[0]
   );
   const [note, setNote] = useState("");
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressID, setSelectedAddressID] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchCartAndSelectedItems = async () => {
       try {
-        const res = await api.get(API_PATHS.BUYER.CART.GET);
-        const cart = res.data;
+        const [cartRes, addressRes] = await Promise.all([
+          api.get(API_PATHS.BUYER.CART.GET),
+          api.get(API_PATHS.BUYER.ADDRESSES),
+        ]);
+
+        const cart = cartRes.data;
+        setAddresses(addressRes.data);
+
+        // Set default address if available
+        const defaultAddr = addressRes.data.find(
+          (a: Address) => a.IsAddressDefault
+        );
+        if (defaultAddr) {
+          setSelectedAddressID(defaultAddr.AddressID);
+        } else if (addressRes.data.length > 0) {
+          setSelectedAddressID(addressRes.data[0].AddressID);
+        }
 
         // Get selected items from sessionStorage (passed from cart page)
         const selectedKeys = JSON.parse(
@@ -100,6 +131,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!selectedAddressID) {
+      alert("Please select a delivery address");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -111,20 +147,14 @@ export default function CheckoutPage() {
       }));
 
       // Create order
-      await api.post(API_PATHS.BUYER.ORDER.CREATE, {
+      await api.put(API_PATHS.BUYER.ORDER.CREATE, {
         Skus: skus,
-        AddressID: 1, // Default address - in production, let user select
+        AddressID: selectedAddressID,
         ProviderName: providerName,
         AccountID: accountID,
+        DeliveryMethodName: deliveryProvider.method,
+        DeliveryProviderName: deliveryProvider.name,
       });
-
-      // Remove purchased items from cart
-      const deletePromises = selectedItems.map((item) =>
-        api.delete(API_PATHS.BUYER.CART.GET, {
-          data: { ProductID: item.ProductID, SKUName: item.SKUName },
-        })
-      );
-      await Promise.all(deletePromises);
 
       // Update cart count
       if (cartContext) {
@@ -138,7 +168,9 @@ export default function CheckoutPage() {
       router.push("/product");
     } catch (err: any) {
       console.error("Failed to place order:", err);
-      alert(err.response?.data?.error || "Failed to place order. Please try again.");
+      alert(
+        err.response?.data?.error || "Failed to place order. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -162,6 +194,58 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Section - Order Items & Payment */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Delivery Address */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
+              {addresses.length > 0 ? (
+                <div className="space-y-3">
+                  {addresses.map((addr) => (
+                    <label
+                      key={addr.AddressID}
+                      className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition ${
+                        selectedAddressID === addr.AddressID
+                          ? "border-brand bg-brand/5"
+                          : "border-gray-200 hover:border-brand/50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="address"
+                        checked={selectedAddressID === addr.AddressID}
+                        onChange={() => setSelectedAddressID(addr.AddressID)}
+                        className="mt-1 w-4 h-4 accent-brand"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold">{addr.ContactName}</span>
+                          <span className="text-gray-500">|</span>
+                          <span className="text-gray-600">
+                            {addr.ContactPhoneNumber}
+                          </span>
+                          {addr.IsAddressDefault && (
+                            <span className="text-xs bg-brand text-white px-2 py-0.5 rounded">
+                              Default
+                            </span>
+                          )}
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">
+                            {addr.AddressType}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {addr.DetailAddress}, {addr.Commune}, {addr.District},{" "}
+                          {addr.City}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No addresses found. Please add an address in your profile.
+                </div>
+              )}
+            </div>
+
             {/* Product List */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-bold mb-4">Order Items</h2>
@@ -237,17 +321,19 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-semibold mb-2">
                     Select Bank
                   </label>
-                  <select
-                    value={providerName}
-                    onChange={(e) => setProviderName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand"
-                  >
-                    <option value="Techcombank">Techcombank - 52519</option>
-                    <option value="VCB">VietcomBank</option>
-                    <option value="ACB">ACB</option>
-                    <option value="MBBank">MB Bank</option>
-                    <option value="BIDV">BIDV</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={providerName}
+                      onChange={(e) => setProviderName(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand appearance-none pr-10"
+                    >
+                      <option value="VCB">VietcomBank</option>
+                      <option value="MoMo">MoMo</option>
+                      <option value="OCB">OCB</option>
+                      <option value="ZaloPay">ZaloPay</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none w-5 h-5" />
+                  </div>
                 </div>
 
                 {/* Account Number */}
@@ -260,7 +346,7 @@ export default function CheckoutPage() {
                     value={accountID}
                     onChange={(e) => setAccountID(e.target.value)}
                     placeholder="Enter your account number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                 </div>
 
@@ -274,7 +360,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Leave a message..."
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none"
                   />
                 </div>
               </div>

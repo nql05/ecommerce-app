@@ -33,7 +33,7 @@ router.put(
   authenticate,
   authorize(["B", "A"]),
   buyerController.proceedCart
-)
+);
 
 router.delete(
   "/cart",
