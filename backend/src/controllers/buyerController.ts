@@ -28,6 +28,17 @@ export const getProductDetails = async (req: Request, res: Response) => {
   }
 };
 
+export const getAddresses = async (req: Request, res: Response) => {
+  try {
+    const addresses = await buyerService.getAddresses((req as any).user.loginName);
+    return res.json(addresses);
+  } catch (err) {
+    console.error(`getAddresses error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+  }
+};
+
 export const addToCart = async (req: Request, res: Response) => {
   try {
     const { ProductID, SKUName, Quantity } = req.body;
@@ -177,6 +188,7 @@ export const readOrderDetails = async (req: Request, res: Response) => {
 export default {
   listProducts,
   getProductDetails,
+  getAddresses,
   addToCart,
   getCart,
   proceedCart,

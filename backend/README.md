@@ -21,14 +21,15 @@ Express.js API server for the e-commerce website.
     - [`GET /seller/earnings` - View seller earnings](#get-sellerearnings---view-seller-earnings)
     - [Notes about comments and SKUs](#notes-about-comments-and-skus)
   - [Buyer API Endpoints](#buyer-api-endpoints)
-    - [`GET /buyers/products` - Browse products (public)](#get-buyersproducts---browse-products-public)
-    - [`GET /buyers/products/:id` - Product details (public)](#get-buyersproductsid---product-details-public)
-    - [`POST /buyers/cart` - Add item to cart / Edit quantity if already existed](#post-buyerscart---add-item-to-cart--edit-quantity-if-already-existed)
-    - [`PUT /buyers/cart` - Proceed item from cart to make an order](#put-buyerscart---proceed-item-from-cart-to-make-an-order)
-    - [`GET /buyers/cart` - Get current cart](#get-buyerscart---get-current-cart)
-    - [`DELETE /buyers/cart` - Remove an item from cart](#delete-buyerscart---remove-an-item-from-cart)
-    - [`POST /buyers/order/create` - Create an order](#post-buyersordercreate---create-an-order)
-    - [`GET /buyers/order/:id` - Get Order ID](#get-buyersorderid---get-order-id)
+    - [`GET /buyer/products` - Browse products (public)](#get-buyerproducts---browse-products-public)
+    - [`GET /buyer/products/:id` - Product details (public)](#get-buyerproductsid---product-details-public)
+    - [`GET /buyer/addresses` - Get user's addresses](#get-buyeraddresses---get-users-addresses)
+    - [`POST /buyer/cart` - Add item to cart / Edit quantity if already existed](#post-buyercart---add-item-to-cart--edit-quantity-if-already-existed)
+    - [`PUT /buyer/cart` - Proceed item from cart to make an order](#put-buyercart---proceed-item-from-cart-to-make-an-order)
+    - [`GET /buyer/cart` - Get current cart](#get-buyercart---get-current-cart)
+    - [`DELETE /buyer/cart` - Remove an item from cart](#delete-buyercart---remove-an-item-from-cart)
+    - [`POST /buyer/order/create` - Create an order](#post-buyerordercreate---create-an-order)
+    - [`GET /buyer/order/:id` - Get Order ID](#get-buyerorderid---get-order-id)
   - [Admin API Endpoints](#admin-api-endpoints)
     - [`GET /admin/sellers` - List all sellers](#get-adminsellers---list-all-sellers)
     - [`GET /admin/sellers/:loginName` - Read seller details](#get-adminsellersloginname---read-seller-details)
@@ -480,11 +481,11 @@ Do not include `ProductID` in the body — IDs are immutable. Modifying SKUs is 
 
 ## Buyer API Endpoints
 
-Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are public; cart and order endpoints require JWT with role `B` (Buyer).
+Note: buyer routes are mounted under `/buyer`. Product browsing endpoints are public; cart and order endpoints require JWT with role `B` (Buyer).
 
-### `GET /buyers/products` - Browse products (public)
+### `GET /buyer/products` - Browse products (public)
 
-**Request:** `GET /buyers/products` (no JWT required).
+**Request:** `GET /buyer/products` (no JWT required).
 
 **Response:** List of products (brief information) similar to seller listing.
 
@@ -838,9 +839,9 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 ]
 ```
 
-### `GET /buyers/products/:id` - Product details (public)
+### `GET /buyer/products/:id` - Product details (public)
 
-**Request:** `GET /buyers/products/:id` (no JWT required).
+**Request:** `GET /buyer/products/:id` (no JWT required).
 
 **Response:** Product detail object (same structure as seller product detail):
 
@@ -896,9 +897,44 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 
 **Exception:** same as `GET /sellers/products/:id`.
 
-### `POST /buyers/cart` - Add item to cart / Edit quantity if already existed
+### `GET /buyer/addresses` - Get user's addresses
 
-**Request:** `POST /buyers/cart` with JWT (role `B`). Body should include product/SKU identifier and `Quantity`. Example :
+**Request:** `GET /buyer/addresses` with JWT (role `B` or `A`).
+
+**Response:** Array of address objects for the authenticated user:
+
+```json
+[
+    {
+        "LoginName": "user004",
+        "AddressID": 6,
+        "ContactName": "Sarah Johnson",
+        "ContactPhoneNumber": "0934567890",
+        "City": "Ho Chi Minh City",
+        "District": "District 4",
+        "Commune": "Ward 5",
+        "DetailAddress": "321 Elm St",
+        "AddressType": "Home",
+        "IsAddressDefault": true
+    },
+    {
+        "LoginName": "user004",
+        "AddressID": 7,
+        "ContactName": "Sarah Johnson",
+        "ContactPhoneNumber": "0934567890",
+        "City": "Ho Chi Minh City",
+        "District": "District 7",
+        "Commune": "Ward 8",
+        "DetailAddress": "111 Work Plaza",
+        "AddressType": "Office",
+        "IsAddressDefault": false
+    }
+]
+```
+
+### `POST /buyer/cart` - Add item to cart / Edit quantity if already existed
+
+**Request:** `POST /buyer/cart` with JWT (role `B`). Body should include product/SKU identifier and `Quantity`. Example :
 
 ```json
 {
@@ -908,9 +944,9 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 }
 ```
 
-### `PUT /buyers/cart` - Proceed item from cart to make an order
+### `PUT /buyer/cart` - Proceed item from cart to make an order
 
-**Request:** `POST /buyers/cart` with the JWT. Body should include:
+**Request:** `POST /buyer/cart` with the JWT. Body should include:
 
 ```json
 {
@@ -972,9 +1008,9 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 
 **Response:** Updated cart or created cart item. If quantity <= 0, return `400 - Quantity must be at least 1`.
 
-### `GET /buyers/cart` - Get current cart
+### `GET /buyer/cart` - Get current cart
 
-**Request:** `GET /buyers/cart` with JWT (role `B`).
+**Request:** `GET /buyer/cart` with JWT (role `B`).
 
 **Response:** Cart contents like this:
 
@@ -1057,9 +1093,9 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 }
 ```
 
-### `DELETE /buyers/cart` - Remove an item from cart
+### `DELETE /buyer/cart` - Remove an item from cart
 
-**Request:** `DELETE /buyers/cart` with JWT (role `B`). Body should identify which item to remove (ProductID and SKUName):
+**Request:** `DELETE /buyer/cart` with JWT (role `B`). Body should identify which item to remove (ProductID and SKUName):
 
 ```json
 {
@@ -1070,9 +1106,9 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 
 **Response:** `200 - OK`.
 
-### `POST /buyers/order/create` - Create an order
+### `POST /buyer/order/create` - Create an order
 
-**Request:** `POST /buyers/order/create` with JWT (role `B`) and order details.
+**Request:** `POST /buyer/order/create` with JWT (role `B`) and order details.
 
 ```json
 {
@@ -1132,7 +1168,7 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 }
 ```
 
-### `GET /buyers/order/:id` - Get Order ID
+### `GET /buyer/order/:id` - Get Order ID
 
 **Request:** Send `GET /buyer/order/:id` with `:id` is the order id
 

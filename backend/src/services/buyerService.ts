@@ -14,6 +14,12 @@ const findUnique = async (id: number) => {
   });
 };
 
+const getAddresses = async (loginName: string) => {
+  return prisma.addressInfo.findMany({
+    where: { LoginName: loginName },
+  });
+};
+
 const addToCart = async (
   loginName: string,
   productID: number,
@@ -204,6 +210,7 @@ const readOrderDetails = async (orderID: number) => {
 export default {
   findMany,
   findUnique,
+  getAddresses,
   addToCart,
   getCart,
   removeFromCart,
