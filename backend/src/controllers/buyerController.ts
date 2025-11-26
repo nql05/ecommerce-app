@@ -138,25 +138,25 @@ export const removeFromCart = async (req: Request, res: Response) => {
   }
 };
 
-export const createOrder = async (req: Request, res: Response) => {
-  try {
-    const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
-    const order = await buyerService.createOrder(
-      (req as any).user.loginName,
-      Skus,
-      AddressID,
-      ProviderName,
-      DeliveryMethodName,
-      DeliveryProviderName,
-      AccountID
-    );
-    return res.json(order);
-  } catch (err) {
-    console.error(`createOrder error: ${(err as Error).message}`);
-    const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
-  }
-};
+// export const createOrder = async (req: Request, res: Response) => {
+//   try {
+//     const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
+//     const order = await buyerService.createOrder(
+//       (req as any).user.loginName,
+//       Skus,
+//       AddressID,
+//       ProviderName,
+//       DeliveryMethodName,
+//       DeliveryProviderName,
+//       AccountID
+//     );
+//     return res.json(order);
+//   } catch (err) {
+//     console.error(`createOrder error: ${(err as Error).message}`);
+//     const parsed = parsePrismaError(err);
+//     return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+//   }
+// };
 
 export const readOrderDetails = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
@@ -182,6 +182,6 @@ export default {
   proceedCart,
   removeFromCart,
   updateCart,
-  createOrder,
+  // createOrder,
   readOrderDetails,
 };

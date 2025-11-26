@@ -35,12 +35,12 @@ router.delete(
   buyerController.removeFromCart
 );
 
-router.post(
-  "/order/create",
-  authenticate,
-  authorize(["B", "A"]),
-  buyerController.createOrder
-);
+// router.post(
+//   "/order/create",
+//   authenticate,
+//   authorize(["B", "A"]),
+//   buyerController.createOrder
+// );
 
 router.get(
   "/order/:id",

@@ -16,7 +16,7 @@ export const API_PATHS = {
             GET: '/buyer/cart',
         },
         ORDER: {
-            CREATE: '/buyer/order/create',
+            // CREATE: '/buyer/order/create',
             DETAIL: (orderId: string) => `/buyer/order/${orderId}`,
         }
     },
