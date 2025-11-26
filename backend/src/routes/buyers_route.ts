@@ -7,6 +7,13 @@ const router = express.Router();
 router.get("/products", buyerController.listProducts);
 router.get("/products/:id", buyerController.getProductDetails);
 
+router.get(
+  "/addresses",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.getAddresses
+);
+
 router.post(
   "/cart",
   authenticate,
