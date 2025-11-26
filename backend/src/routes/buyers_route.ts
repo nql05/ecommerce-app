@@ -13,20 +13,12 @@ router.post(
   authorize(["B", "A"]),
   buyerController.addToCart
 );
-
 router.get(
   "/cart",
   authenticate,
   authorize(["B", "A"]),
   buyerController.getCart
 );
-
-router.put(
-  "/cart",
-  authenticate,
-  authorize(["B", "A"]),
-  buyerController.proceedCart
-)
 
 router.delete(
   "/cart",

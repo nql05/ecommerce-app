@@ -24,7 +24,6 @@ Express.js API server for the e-commerce website.
     - [`GET /buyers/products` - Browse products (public)](#get-buyersproducts---browse-products-public)
     - [`GET /buyers/products/:id` - Product details (public)](#get-buyersproductsid---product-details-public)
     - [`POST /buyers/cart` - Add item to cart / Edit quantity if already existed](#post-buyerscart---add-item-to-cart--edit-quantity-if-already-existed)
-    - [`PUT /buyers/cart` - Proceed item from cart to make an order](#put-buyerscart---proceed-item-from-cart-to-make-an-order)
     - [`GET /buyers/cart` - Get current cart](#get-buyerscart---get-current-cart)
     - [`DELETE /buyers/cart` - Remove an item from cart](#delete-buyerscart---remove-an-item-from-cart)
     - [`POST /buyers/order/create` - Create an order](#post-buyersordercreate---create-an-order)
@@ -908,68 +907,6 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 }
 ```
 
-### `PUT /buyers/cart` - Proceed item from cart to make an order
-
-**Request:** `POST /buyers/cart` with the JWT. Body should include:
-
-```json
-{
-    "Skus": [
-        {
-            "ProductID": 1,
-            "SKUName": "128GB-Black",
-            "Quantity": 2
-        },
-        {
-            "ProductID": 1,
-            "SKUName": "128GB-White",
-            "Quantity": 3
-        }
-    ],
-    "AddressID": 6,
-    "ProviderName": "VCB",
-    "AccountID": 12321,
-    "DeliveryMethodName": "Standard",
-    "DeliveryProviderName": "VNPost"
-}
-```
-
-**Response:** The order that is made, include the following information:
-
-```json
-{
-    "OrderID": 15,
-    "LoginName": "user004",
-    "OrderDate": "2025-11-25T10:21:15.713Z",
-    "TotalPrice": 0,
-    "ProviderName": "VCB",
-    "AccountID": "452152",
-    "AddressID": 6,
-    "SubOrderInfo": [
-        {
-            "OrderID": 15,
-            "SubOrderID": 6,
-            "TotalSKUPrice": 0,
-            "ShippingStatus": "Preparing",
-            "ActualDate": "2025-11-25T10:21:15.727Z",
-            "ExpectedDate": "2025-11-25T10:21:15.727Z",
-            "DeliveryMethodName": "Standard",
-            "DeliveryProviderName": "VNPost",
-            "DeliveryPrice": 36363,
-            "SubOrderDetail": [
-                {
-                    "OrderID": 15,
-                    "SubOrderID": 6,
-                    "ProductID": 1,
-                    "SKUName": "128GB-Black",
-                    "Quantity": 2
-                }
-            ]
-        }
-    ]
-}
-```
-
 **Response:** Updated cart or created cart item. If quantity <= 0, return `400 - Quantity must be at least 1`.
 
 ### `GET /buyers/cart` - Get current cart
@@ -1087,12 +1024,11 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
             "SKUName": "128GB-White",
             "Quantity": 3
         }
+
     ],
     "AddressID": 6,
     "ProviderName": "VCB",
-    "AccountID": 12321,
-    "DeliveryMethodName": "Standard",
-    "DeliveryProviderName": "VNPost"
+    "AccountID": 12321
 }
 ```
 
@@ -1100,35 +1036,13 @@ Note: buyer routes are mounted under `/buyers`. Product browsing endpoints are p
 
 ```json
 {
-    "OrderID": 15,
+    "OrderID": 10,
     "LoginName": "user004",
-    "OrderDate": "2025-11-25T10:21:15.713Z",
+    "OrderDate": "2025-11-21T11:19:42.371Z",
     "TotalPrice": 0,
     "ProviderName": "VCB",
-    "AccountID": "452152",
-    "AddressID": 6,
-    "SubOrderInfo": [
-        {
-            "OrderID": 15,
-            "SubOrderID": 6,
-            "TotalSKUPrice": 0,
-            "ShippingStatus": "Preparing",
-            "ActualDate": "2025-11-25T10:21:15.727Z",
-            "ExpectedDate": "2025-11-25T10:21:15.727Z",
-            "DeliveryMethodName": "Standard",
-            "DeliveryProviderName": "VNPost",
-            "DeliveryPrice": 36363,
-            "SubOrderDetail": [
-                {
-                    "OrderID": 15,
-                    "SubOrderID": 6,
-                    "ProductID": 1,
-                    "SKUName": "128GB-Black",
-                    "Quantity": 2
-                }
-            ]
-        }
-    ]
+    "AccountID": "12321",
+    "AddressID": 6
 }
 ```
 

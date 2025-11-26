@@ -93,9 +93,7 @@ const createOrder = async (
   skus: any[],
   addressID: number,
   providerName: string,
-  deliveryMethod: string,
-  deliveryProvider: string,
-  accountID?: string | number | null,
+  accountID?: string | number | null
 ) => {
   try {
     if (!Array.isArray(skus) || skus.length === 0) {
@@ -137,11 +135,10 @@ const createOrder = async (
     const subOrder = await prisma.subOrderInfo.create({
       data: {
         OrderID: order.OrderID,
-        DeliveryMethodName: deliveryMethod,
-        DeliveryProviderName: deliveryProvider,
+        DeliveryMethodName: "Standard",
+        DeliveryProviderName: "VNPost",
         ActualDate: new Date(),
         ExpectedDate: new Date(),
-        DeliveryPrice: 36363,
       },
     });
 
@@ -158,13 +155,7 @@ const createOrder = async (
       });
     }
 
-    // Return the order with nested sub-orders and their details
-    const fullOrder = await prisma.orderInfo.findUnique({
-      where: { OrderID: order.OrderID },
-      include: { SubOrderInfo: { include: { SubOrderDetail: true } } },
-    });
-
-    return fullOrder;
+    return order;
   } catch (error) {
     const originalMessage = error instanceof Error ? error.message : String(error);
 

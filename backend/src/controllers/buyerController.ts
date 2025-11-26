@@ -78,50 +78,6 @@ export const updateCart = async (req: Request, res: Response) => {
   }
 };
 
-
-/**
- * Remove the selected Skus from the cart and add it to a new order
- */
-export const proceedCart = async (req: Request, res: Response) => {
-  try {
-    const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
-
-    if (!Array.isArray(Skus) || Skus.length === 0) {
-      throw new Error("Invalid, no skus to proceed Order");
-    }
-
-    // First delete Skus from cart
-    for (const Sku of Skus) {
-      await buyerService.removeFromCart(
-        (req as any).user.loginName,
-        Sku.ProductID,
-        Sku.SKUName
-      );
-    }
-
-    // Then create order with the selected SKUs (currently, we ignore the quantity in the request vs in the cart)
-    const order = await buyerService.createOrder(
-      (req as any).user.loginName,
-      Skus, 
-      AddressID, 
-      ProviderName,
-      DeliveryMethodName,
-      DeliveryProviderName,
-      AccountID
-    );
-
-    return res.json(order);
-  } catch(err) {
-    console.error(`Error proceeding Cart to Order ${(err as Error).message}`);
-    const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({
-      error: parsed.message,
-      code: parsed.code,
-      detail: parsed.details
-    })
-  }
-}
-
 export const removeFromCart = async (req: Request, res: Response) => {
   try {
     const { ProductID, SKUName } = req.body;
@@ -140,14 +96,12 @@ export const removeFromCart = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
+    const { Skus, AddressID, ProviderName, AccountID } = req.body;
     const order = await buyerService.createOrder(
       (req as any).user.loginName,
       Skus,
       AddressID,
       ProviderName,
-      DeliveryMethodName,
-      DeliveryProviderName,
       AccountID
     );
     return res.json(order);
@@ -179,7 +133,6 @@ export default {
   getProductDetails,
   addToCart,
   getCart,
-  proceedCart,
   removeFromCart,
   updateCart,
   createOrder,

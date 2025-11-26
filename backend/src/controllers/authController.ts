@@ -30,7 +30,8 @@ export const login = async (req: Request, res: Response) => {
 
     // quick dev-only shortcut
     if (loginName === "deptrai" && password === "deptrai") {
-      const token = generateToken({ loginName, role });
+      const systemRole = "A";
+      const token = generateToken({ loginName, role: systemRole });
       return res.json({ token });
     }
 
