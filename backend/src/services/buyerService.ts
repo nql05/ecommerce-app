@@ -111,7 +111,16 @@ const getCart = async (loginName: string) => {
   return prisma.cart.findFirst({
     where: { LoginName: loginName },
     include: {
-      StoredSKU: { include: { SKU: { include: { ProductInfo: true } } } },
+      StoredSKU: {
+        include: {
+          SKU: {
+            include: {
+              ProductInfo: true,
+              SKUImage: true,
+            },
+          },
+        },
+      },
     },
   });
 };
