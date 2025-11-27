@@ -141,7 +141,7 @@ export default function SellerDashboard() {
     setProductModalOpen(true);
   };
 
-  const handleAddVariant = () => {
+  const handleAddSku = () => {
     setSelectedSkuToEdit(null);
     setFormData({
       ProductName: editingProduct.ProductName,
@@ -164,7 +164,7 @@ export default function SellerDashboard() {
   };
 
   const handleDeleteSku = async (sku: any) => {
-    if (!confirm(`Are you sure you want to delete variant "${sku.SKUName}"?`))
+    if (!confirm(`Are you sure you want to delete SKU "${sku.SKUName}"?`))
       return;
     try {
       await api.delete(
@@ -187,7 +187,7 @@ export default function SellerDashboard() {
         )
       );
 
-      alert("Variant deleted");
+      alert("SKU deleted");
     } catch (err) {
       console.error(err);
       alert("Failed to delete variant");
@@ -307,7 +307,7 @@ export default function SellerDashboard() {
             })),
           },
         };
-        const res = await api.post(API_PATHS.SELLER.PRODUCTS.ADD, payload);
+        await api.post(API_PATHS.SELLER.PRODUCTS.ADD, payload);
         // Refresh list to get full structure including SKU
         const listRes = await api.get(API_PATHS.SELLER.PRODUCTS.LIST);
         setProducts(listRes.data);
@@ -442,7 +442,7 @@ export default function SellerDashboard() {
               className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-bold">
                   Statistics: {selectedProduct.ProductName}
                 </h2>
@@ -486,7 +486,7 @@ export default function SellerDashboard() {
                             ([date, revenue]) => (
                               <div
                                 key={date}
-                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                                className="flex justify-between items-center p-3 border rounded-lg"
                               >
                                 <span className="font-medium">{date}</span>
                                 <span className="font-bold text-brand">
@@ -515,7 +515,7 @@ export default function SellerDashboard() {
                             ([month, revenue]) => (
                               <div
                                 key={month}
-                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                                className="flex justify-between items-center p-3 border rounded-lg"
                               >
                                 <span className="font-medium">{month}</span>
                                 <span className="font-bold text-brand">
@@ -542,7 +542,7 @@ export default function SellerDashboard() {
                             ([year, revenue]) => (
                               <div
                                 key={year}
-                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                                className="flex justify-between items-center p-3 border rounded-lg"
                               >
                                 <span className="font-medium">{year}</span>
                                 <span className="font-bold text-brand">
@@ -569,7 +569,7 @@ export default function SellerDashboard() {
                             ([sku, stats]: [string, any]) => (
                               <div
                                 key={sku}
-                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                                className="flex justify-between items-center p-3 border rounded-lg"
                               >
                                 <span className="font-medium">{sku}</span>
                                 <div className="text-right">
@@ -615,7 +615,7 @@ export default function SellerDashboard() {
               className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-bold">Select SKU to Edit</h2>
                 <button
                   onClick={() => setSkuSelectionModalOpen(false)}
@@ -626,7 +626,7 @@ export default function SellerDashboard() {
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-gray-600">
-                  Choose which variant of{" "}
+                  Choose which SKU of{" "}
                   <strong>{editingProduct.ProductName}</strong> you want to
                   edit.
                 </p>
@@ -634,7 +634,7 @@ export default function SellerDashboard() {
                   {editingProduct.SKU?.map((sku: any) => (
                     <div
                       key={sku.SKUName}
-                      className="w-full p-4 border rounded-lg hover:bg-gray-50 hover:border-brand transition flex justify-between items-center group"
+                      className="w-full p-4 border rounded-lg hover:bg-brand/5 hover:border-brand hover:ring-1 hover:ring-brand transition flex justify-between items-center group"
                     >
                       <button
                         onClick={() => handleSelectSkuToEdit(sku)}
@@ -645,31 +645,22 @@ export default function SellerDashboard() {
                           {formatVND(sku.Price)} - Stock: {sku.InStockNumber}
                         </p>
                       </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleSelectSkuToEdit(sku)}
-                          className="p-2 text-gray-400 hover:text-brand"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSku(sku)}
-                          className="p-2 text-gray-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDeleteSku(sku)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
-
-                  <button
-                    onClick={handleAddVariant}
-                    className="w-full p-4 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-brand hover:text-brand hover:bg-brand/5 transition flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add New Variant
-                  </button>
                 </div>
+                <button
+                  onClick={handleAddSku}
+                  className="flex items-center gap-2 text-brand font-semibold hover:underline"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add New SKU
+                </button>
               </div>
             </div>
           </div>,
@@ -688,7 +679,7 @@ export default function SellerDashboard() {
               className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
                 <h2 className="text-xl font-bold">
                   {editingProduct
                     ? selectedSkuToEdit
@@ -796,21 +787,21 @@ export default function SellerDashboard() {
                     {editingProduct
                       ? selectedSkuToEdit
                         ? "SKU Details"
-                        : "New Variant Details"
-                      : "Product Variants (SKUs)"}
+                        : "New SKU Details"
+                      : "Product SKUs"}
                   </h3>
 
                   <div className="space-y-6">
                     {formData.skus.map((sku, index) => (
                       <div
                         key={index}
-                        className="bg-gray-50 p-4 rounded-lg relative"
+                        className="border p-4 rounded-lg relative shadow-sm"
                       >
                         {!editingProduct && formData.skus.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveSkuRow(index)}
-                            className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                            className="absolute top-2 right-2  hover:bg-gray-100 p-1 rounded-full"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -823,7 +814,7 @@ export default function SellerDashboard() {
                             <button
                               type="button"
                               onClick={() => handleRemoveSkuRow(index)}
-                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                              className="absolute top-2 right-2  hover:bg-gray-100 p-1 rounded-full"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -923,7 +914,7 @@ export default function SellerDashboard() {
                       className="mt-4 flex items-center gap-2 text-brand font-semibold hover:underline"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Another Variant
+                      Add Another SKU
                     </button>
                   )}
 
@@ -935,7 +926,7 @@ export default function SellerDashboard() {
                       className="mt-4 flex items-center gap-2 text-brand font-semibold hover:underline"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Another Variant
+                      Add Another SKU
                     </button>
                   )}
                 </div>

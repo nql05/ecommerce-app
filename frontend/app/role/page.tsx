@@ -13,35 +13,35 @@ export default function RoleSelection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Link
             href="/login?role=B"
-            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
+            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand hover:ring-1 hover:ring-brand transition-all"
           >
             <ShoppingBag
               size={64}
               className="mb-6 text-gray-400 group-hover:text-brand transition-colors"
             />
-            <h2 className="text-2xl font-bold text-black">Buyer</h2>
+            <h2 className="text-2xl font-bold text-brand">Buyer</h2>
           </Link>
 
           <Link
             href="/login?role=S"
-            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
+            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand hover:ring-1 hover:ring-brand transition-all"
           >
             <Store
               size={64}
               className="mb-6 text-gray-400 group-hover:text-brand transition-colors"
             />
-            <h2 className="text-2xl font-bold text-black">Seller</h2>
+            <h2 className="text-2xl font-bold text-brand">Seller</h2>
           </Link>
 
           <Link
             href="/login?role=A"
-            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand transition-all"
+            className="group flex flex-col items-center justify-center p-12 border-2 border-gray-200 rounded-2xl hover:border-brand hover:ring-1 hover:ring-brand transition-all"
           >
             <Shield
               size={64}
               className="mb-6 text-gray-400 group-hover:text-brand transition-colors"
             />
-            <h2 className="text-2xl font-bold text-black">Admin</h2>
+            <h2 className="text-2xl font-bold text-brand">Admin</h2>
           </Link>
         </div>
       </div>

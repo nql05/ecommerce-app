@@ -20,7 +20,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   return (
     <Link href={`/product/${id || 1}`} className="block">
-      <div className="group rounded-lg p-3 shadow-sm hover:shadow-md transition bg-white flex flex-col cursor-pointer">
+      <div className="group rounded-lg p-3 border hover:shadow-md transition bg-white flex flex-col cursor-pointer">
         <div className="w-full aspect-square relative mb-3 overflow-hidden rounded-md bg-gray-100">
           <Image
             src={imageUrl}
