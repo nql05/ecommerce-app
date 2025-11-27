@@ -31,6 +31,8 @@ export const API_PATHS = {
       ADD: "/seller/products/add",
       EDIT: (productId: number) => `/seller/products/${productId}`,
       DELETE: (productId: number) => `/seller/products/${productId}`,
+      DELETE_SKU: (productId: number, skuName: string) =>
+        `/seller/products/${productId}/sku/${encodeURIComponent(skuName)}`,
       STATISTICS: (productId: number) =>
         `/seller/products/${productId}/statistics`,
     },

@@ -63,6 +63,8 @@ const updateProduct = async (id: number, data: any) => {
 
 const deleteProduct = async (id: number) => {
   try {
+    // Delete associated SKUs first (and their cascaded relations)
+    await prisma.sKU.deleteMany({ where: { ProductID: id } });
     return await prisma.productInfo.delete({ where: { ProductID: id } });
   } catch (error) {
     const originalMessage =
@@ -160,12 +162,32 @@ const getProductStatistics = async (productId: number) => {
   }
 };
 
+const deleteSku = async (productId: number, skuName: string) => {
+  try {
+    return await prisma.sKU.delete({
+      where: {
+        ProductID_SKUName: {
+          ProductID: productId,
+          SKUName: skuName,
+        },
+      },
+    });
+  } catch (error) {
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to delete SKU ${skuName} for product ${productId}: ${originalMessage}`
+    );
+  }
+};
+
 export default {
   listSellerProducts,
   createProduct,
   readProduct,
   updateProduct,
   deleteProduct,
+  deleteSku,
   getEarnings,
   getProductStatistics,
 };

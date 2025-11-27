@@ -18,23 +18,28 @@ export default function SellerDashboard() {
 
   // Product Modal State
   const [productModalOpen, setProductModalOpen] = useState(false);
+  const [skuSelectionModalOpen, setSkuSelectionModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [selectedSkuToEdit, setSelectedSkuToEdit] = useState<any>(null);
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductBrand: "",
     ProductCategory: "",
     ProductDescription: "",
     ProductMadeIn: "",
-    // Initial SKU data for new products
-    SKUName: "",
-    Price: "",
-    InStockNumber: "",
-    Size: "",
-    Weight: "",
+    skus: [
+      {
+        SKUName: "",
+        Price: "",
+        InStockNumber: "",
+        Size: "",
+        Weight: "",
+      },
+    ],
   });
 
   useEffect(() => {
-    if (statsModalOpen) {
+    if (statsModalOpen || productModalOpen || skuSelectionModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -42,7 +47,7 @@ export default function SellerDashboard() {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [statsModalOpen]);
+  }, [statsModalOpen, productModalOpen, skuSelectionModalOpen]);
 
   useEffect(() => {
     setMounted(true);
@@ -96,38 +101,133 @@ export default function SellerDashboard() {
       ProductCategory: "",
       ProductDescription: "",
       ProductMadeIn: "",
-      SKUName: "",
-      Price: "",
-      InStockNumber: "",
-      Size: "",
-      Weight: "",
+      skus: [
+        {
+          SKUName: "",
+          Price: "",
+          InStockNumber: "",
+          Size: "",
+          Weight: "",
+        },
+      ],
     });
     setProductModalOpen(true);
   };
 
   const handleOpenEdit = (product: any) => {
     setEditingProduct(product);
+    setSkuSelectionModalOpen(true);
+  };
+
+  const handleSelectSkuToEdit = (sku: any) => {
+    setSelectedSkuToEdit(sku);
     setFormData({
-      ProductName: product.ProductName,
-      ProductBrand: product.ProductBrand || "",
-      ProductCategory: product.ProductCategory,
-      ProductDescription: product.ProductDescription || "",
-      ProductMadeIn: product.ProductMadeIn,
-      SKUName: "", // Not editing SKUs
-      Price: "",
-      InStockNumber: "",
-      Size: "",
-      Weight: "",
+      ProductName: editingProduct.ProductName,
+      ProductBrand: editingProduct.ProductBrand || "",
+      ProductCategory: editingProduct.ProductCategory,
+      ProductDescription: editingProduct.ProductDescription || "",
+      ProductMadeIn: editingProduct.ProductMadeIn,
+      skus: [
+        {
+          SKUName: sku.SKUName,
+          Price: String(sku.Price),
+          InStockNumber: String(sku.InStockNumber),
+          Size: String(sku.Size),
+          Weight: String(sku.Weight),
+        },
+      ],
     });
+    setSkuSelectionModalOpen(false);
     setProductModalOpen(true);
+  };
+
+  const handleAddVariant = () => {
+    setSelectedSkuToEdit(null);
+    setFormData({
+      ProductName: editingProduct.ProductName,
+      ProductBrand: editingProduct.ProductBrand || "",
+      ProductCategory: editingProduct.ProductCategory,
+      ProductDescription: editingProduct.ProductDescription || "",
+      ProductMadeIn: editingProduct.ProductMadeIn,
+      skus: [
+        {
+          SKUName: "",
+          Price: "",
+          InStockNumber: "",
+          Size: "",
+          Weight: "",
+        },
+      ],
+    });
+    setSkuSelectionModalOpen(false);
+    setProductModalOpen(true);
+  };
+
+  const handleDeleteSku = async (sku: any) => {
+    if (!confirm(`Are you sure you want to delete variant "${sku.SKUName}"?`))
+      return;
+    try {
+      await api.delete(
+        API_PATHS.SELLER.PRODUCTS.DELETE_SKU(
+          editingProduct.ProductID,
+          sku.SKUName
+        )
+      );
+
+      // Update local state
+      const updatedSkus = editingProduct.SKU.filter(
+        (s: any) => s.SKUName !== sku.SKUName
+      );
+      const updatedProduct = { ...editingProduct, SKU: updatedSkus };
+
+      setEditingProduct(updatedProduct);
+      setProducts(
+        products.map((p) =>
+          p.ProductID === editingProduct.ProductID ? updatedProduct : p
+        )
+      );
+
+      alert("Variant deleted");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete variant");
+    }
+  };
+
+  const handleAddSkuRow = () => {
+    setFormData({
+      ...formData,
+      skus: [
+        ...formData.skus,
+        {
+          SKUName: "",
+          Price: "",
+          InStockNumber: "",
+          Size: "",
+          Weight: "",
+        },
+      ],
+    });
+  };
+
+  const handleRemoveSkuRow = (index: number) => {
+    const newSkus = [...formData.skus];
+    newSkus.splice(index, 1);
+    setFormData({ ...formData, skus: newSkus });
+  };
+
+  const handleSkuChange = (index: number, field: string, value: string) => {
+    const newSkus = [...formData.skus];
+    newSkus[index] = { ...newSkus[index], [field]: value };
+    setFormData({ ...formData, skus: newSkus });
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingProduct) {
-        // Edit
-        const payload = {
+        // Edit Product Info
+        const productPayload = {
           ProductName: formData.ProductName,
           ProductBrand: formData.ProductBrand,
           ProductCategory: formData.ProductCategory,
@@ -136,13 +236,57 @@ export default function SellerDashboard() {
         };
         await api.put(
           API_PATHS.SELLER.PRODUCTS.EDIT(editingProduct.ProductID),
-          payload
+          productPayload
         );
-        setProducts(
-          products.map((p) =>
-            p.ProductID === editingProduct.ProductID ? { ...p, ...payload } : p
-          )
-        );
+
+        if (selectedSkuToEdit) {
+          const skuData = formData.skus[0];
+          const skuPayload = {
+            SKU: {
+              update: {
+                where: {
+                  ProductID_SKUName: {
+                    ProductID: editingProduct.ProductID,
+                    SKUName: selectedSkuToEdit.SKUName,
+                  },
+                },
+                data: {
+                  SKUName: skuData.SKUName,
+                  Price: Number(skuData.Price),
+                  InStockNumber: Number(skuData.InStockNumber),
+                  Size: Number(skuData.Size),
+                  Weight: Number(skuData.Weight),
+                },
+              },
+            },
+          };
+          await api.put(
+            API_PATHS.SELLER.PRODUCTS.EDIT(editingProduct.ProductID),
+            skuPayload
+          );
+        } else {
+          // Adding new SKU to existing product
+          const skuPayload = {
+            SKU: {
+              create: formData.skus.map((sku) => ({
+                SKUName: sku.SKUName,
+                Price: Number(sku.Price),
+                InStockNumber: Number(sku.InStockNumber),
+                Size: Number(sku.Size),
+                Weight: Number(sku.Weight),
+                SKUImage: { create: [] },
+              })),
+            },
+          };
+          await api.put(
+            API_PATHS.SELLER.PRODUCTS.EDIT(editingProduct.ProductID),
+            skuPayload
+          );
+        }
+
+        // Refresh list to get full structure including SKU
+        const listRes = await api.get(API_PATHS.SELLER.PRODUCTS.LIST);
+        setProducts(listRes.data);
         alert("Product updated");
       } else {
         // Add
@@ -153,16 +297,14 @@ export default function SellerDashboard() {
           ProductDescription: formData.ProductDescription,
           ProductMadeIn: formData.ProductMadeIn,
           SKU: {
-            create: [
-              {
-                SKUName: formData.SKUName,
-                Price: Number(formData.Price),
-                InStockNumber: Number(formData.InStockNumber),
-                Size: Number(formData.Size),
-                Weight: Number(formData.Weight),
-                SKUImage: { create: [] }, // No image for now
-              },
-            ],
+            create: formData.skus.map((sku) => ({
+              SKUName: sku.SKUName,
+              Price: Number(sku.Price),
+              InStockNumber: Number(sku.InStockNumber),
+              Size: Number(sku.Size),
+              Weight: Number(sku.Weight),
+              SKUImage: { create: [] },
+            })),
           },
         };
         const res = await api.post(API_PATHS.SELLER.PRODUCTS.ADD, payload);
@@ -221,7 +363,10 @@ export default function SellerDashboard() {
         ) : products.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
             <p className="text-gray-500 text-lg mb-4">No products yet.</p>
-            <button className="bg-brand text-white px-6 py-2 rounded-full font-semibold hover:bg-opacity-90 transition">
+            <button
+              onClick={handleOpenAdd}
+              className="bg-brand text-white px-6 py-2 rounded-full font-semibold hover:bg-opacity-90 transition"
+            >
               Add Your First Product
             </button>
           </div>
@@ -457,6 +602,80 @@ export default function SellerDashboard() {
           document.body
         )}
 
+      {/* SKU Selection Modal */}
+      {mounted &&
+        skuSelectionModalOpen &&
+        editingProduct &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+            onClick={() => setSkuSelectionModalOpen(false)}
+          >
+            <div
+              className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                <h2 className="text-xl font-bold">Select SKU to Edit</h2>
+                <button
+                  onClick={() => setSkuSelectionModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-gray-600">
+                  Choose which variant of{" "}
+                  <strong>{editingProduct.ProductName}</strong> you want to
+                  edit.
+                </p>
+                <div className="space-y-2">
+                  {editingProduct.SKU?.map((sku: any) => (
+                    <div
+                      key={sku.SKUName}
+                      className="w-full p-4 border rounded-lg hover:bg-gray-50 hover:border-brand transition flex justify-between items-center group"
+                    >
+                      <button
+                        onClick={() => handleSelectSkuToEdit(sku)}
+                        className="flex-1 text-left"
+                      >
+                        <p className="font-semibold">{sku.SKUName}</p>
+                        <p className="text-sm text-gray-500">
+                          {formatVND(sku.Price)} - Stock: {sku.InStockNumber}
+                        </p>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleSelectSkuToEdit(sku)}
+                          className="p-2 text-gray-400 hover:text-brand"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSku(sku)}
+                          className="p-2 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={handleAddVariant}
+                    className="w-full p-4 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-brand hover:text-brand hover:bg-brand/5 transition flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add New Variant
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       {/* Product Modal */}
       {mounted &&
         productModalOpen &&
@@ -471,7 +690,11 @@ export default function SellerDashboard() {
             >
               <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
                 <h2 className="text-xl font-bold">
-                  {editingProduct ? "Edit Product" : "Add New Product"}
+                  {editingProduct
+                    ? selectedSkuToEdit
+                      ? "Edit Product Variant"
+                      : "Add New Variant"
+                    : "Add New Product"}
                 </h2>
                 <button
                   onClick={() => setProductModalOpen(false)}
@@ -492,7 +715,10 @@ export default function SellerDashboard() {
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                       value={formData.ProductName}
                       onChange={(e) =>
-                        setFormData({ ...formData, ProductName: e.target.value })
+                        setFormData({
+                          ...formData,
+                          ProductName: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -504,7 +730,10 @@ export default function SellerDashboard() {
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                       value={formData.ProductBrand}
                       onChange={(e) =>
-                        setFormData({ ...formData, ProductBrand: e.target.value })
+                        setFormData({
+                          ...formData,
+                          ProductBrand: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -562,98 +791,154 @@ export default function SellerDashboard() {
                   />
                 </div>
 
-                {!editingProduct && (
-                  <div className="border-t pt-4 mt-4">
-                    <h3 className="font-semibold mb-3">Initial SKU Details</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          SKU Name
-                        </label>
-                        <input
-                          required
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                          value={formData.SKUName}
-                          onChange={(e) =>
-                            setFormData({ ...formData, SKUName: e.target.value })
-                          }
-                        />
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-semibold mb-3">
+                    {editingProduct
+                      ? selectedSkuToEdit
+                        ? "SKU Details"
+                        : "New Variant Details"
+                      : "Product Variants (SKUs)"}
+                  </h3>
+
+                  <div className="space-y-6">
+                    {formData.skus.map((sku, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-50 p-4 rounded-lg relative"
+                      >
+                        {!editingProduct && formData.skus.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkuRow(index)}
+                            className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Allow removing rows when adding new variants to existing product, but keep at least one */}
+                        {editingProduct &&
+                          !selectedSkuToEdit &&
+                          formData.skus.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSkuRow(index)}
+                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              SKU Name
+                            </label>
+                            <input
+                              required
+                              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                              value={sku.SKUName}
+                              onChange={(e) =>
+                                handleSkuChange(
+                                  index,
+                                  "SKUName",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Price
+                            </label>
+                            <input
+                              required
+                              type="number"
+                              min="1000"
+                              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                              value={sku.Price}
+                              onChange={(e) =>
+                                handleSkuChange(index, "Price", e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Stock
+                            </label>
+                            <input
+                              required
+                              type="number"
+                              min="1"
+                              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                              value={sku.InStockNumber}
+                              onChange={(e) =>
+                                handleSkuChange(
+                                  index,
+                                  "InStockNumber",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Size
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                              value={sku.Size}
+                              onChange={(e) =>
+                                handleSkuChange(index, "Size", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Weight
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                              value={sku.Weight}
+                              onChange={(e) =>
+                                handleSkuChange(index, "Weight", e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Price
-                        </label>
-                        <input
-                          required
-                          type="number"
-                          min="1000"
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                          value={formData.Price}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              Price: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Stock
-                        </label>
-                        <input
-                          required
-                          type="number"
-                          min="1"
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                          value={formData.InStockNumber}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              InStockNumber: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Size
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                          value={formData.Size}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              Size: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Weight
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                          value={formData.Weight}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              Weight: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                )}
+
+                  {!editingProduct && (
+                    <button
+                      type="button"
+                      onClick={handleAddSkuRow}
+                      className="mt-4 flex items-center gap-2 text-brand font-semibold hover:underline"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Another Variant
+                    </button>
+                  )}
+
+                  {/* Allow adding multiple rows when adding new variants to existing product */}
+                  {editingProduct && !selectedSkuToEdit && (
+                    <button
+                      type="button"
+                      onClick={handleAddSkuRow}
+                      className="mt-4 flex items-center gap-2 text-brand font-semibold hover:underline"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Another Variant
+                    </button>
+                  )}
+                </div>
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
