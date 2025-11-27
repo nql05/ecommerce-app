@@ -6,6 +6,7 @@ import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
 import { Edit, Trash2, Plus, BarChart2, X } from "lucide-react";
 import formatVND from "../../../utils/formatVND";
+import { getProductImage } from "../../../utils/imageHelper";
 
 export default function SellerDashboard() {
   const [products, setProducts] = useState<any[]>([]);
@@ -380,10 +381,11 @@ export default function SellerDashboard() {
                 <div className="flex items-center gap-6 flex-1">
                   <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
                     <img
-                      src={
-                        product.SKU?.[0]?.SKUImage?.[0]?.SKU_URL ||
-                        "/placeholder.png"
-                      }
+                      src={getProductImage(
+                        product.ProductName,
+                        product.SKU?.[0]?.SKUName,
+                        product.SKU?.[0]?.SKUImage?.[0]?.SKU_URL
+                      )}
                       alt={product.ProductName}
                       className="w-full h-full object-cover"
                     />

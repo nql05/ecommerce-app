@@ -7,6 +7,7 @@ import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
 import { CartContext } from "../../../../context/CartContext";
 import QuantityCounter from "../../../../components/QuantityCounter";
+import { getProductImage } from "../../../../utils/imageHelper";
 
 export default function ProductDetailPage({
   params,
@@ -130,9 +131,11 @@ export default function ProductDetailPage({
   const currentSku =
     product.SKU?.find((s: any) => s.SKUName === selectedSku) ||
     product.SKU?.[0];
-  const imageUrl =
-    currentSku?.SKUImage?.[0]?.SKU_URL ||
-    "https://via.placeholder.com/600?text=No+Image";
+  const imageUrl = getProductImage(
+    product.ProductName,
+    currentSku?.SKUName,
+    currentSku?.SKUImage?.[0]?.SKU_URL
+  );
   const price = currentSku?.Price || 0;
   const stock = currentSku?.InStockNumber || 0;
 
@@ -142,6 +145,7 @@ export default function ProductDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Image */}
         <div className="w-full aspect-square relative rounded-lg overflow-hidden bg-gray-100">
+          {/* @ts-ignore */}
           <Image
             src={imageUrl}
             alt={product.ProductName}
@@ -254,7 +258,7 @@ export default function ProductDetailPage({
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Share your thoughts about this product..."
-              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand resize-none"
+              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none"
             />
             <div className="flex justify-end mt-3">
               <button

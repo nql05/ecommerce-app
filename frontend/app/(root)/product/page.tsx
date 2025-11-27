@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ProductCard, { ProductCardProps } from "../../../components/ProductCard";
 import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
+import { getProductImage } from "../../../utils/imageHelper";
 
 export default function ProductList() {
   const [products, setProducts] = useState<ProductCardProps[]>([]);
@@ -21,12 +22,20 @@ export default function ProductList() {
       // Transform database products to ProductCardProps format
       const transformedProducts: ProductCardProps[] = fetchedProducts
         .map((product: any) => {
-          // Get the first SKU image or use placeholder
-          const firstSku = product.SKU?.[0];
-          const imageUrl =
-            firstSku?.SKUImage?.[0]?.SKU_URL ||
-            "https://via.placeholder.com/300?text=No+Image";
-          const price = firstSku?.Price || 0;
+          const skus = product.SKU || [];
+          // Find SKU with lowest price
+          const lowestPriceSku = skus.reduce(
+            (min: any, curr: any) => (curr.Price < min.Price ? curr : min),
+            skus[0] || {}
+          );
+
+          const imageUrl = getProductImage(
+            product.ProductName,
+            lowestPriceSku?.SKUName,
+            lowestPriceSku?.SKUImage?.[0]?.SKU_URL
+          );
+
+          const price = lowestPriceSku?.Price || 0;
 
           return {
             id: product.ProductID,
