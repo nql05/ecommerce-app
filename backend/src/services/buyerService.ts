@@ -109,37 +109,62 @@ const createOrder = async (
     }
 
     const accountIdValue = accountID == null ? null : String(accountID);
+
+    // Fetch SKU details (Price, Seller) to calculate totals and validate
+    const skuIdentifiers = skus.map((s) => ({
+      ProductID: s.ProductID,
+      SKUName: s.SKUName,
+    }));
+
+    const skuDetails = await prisma.sKU.findMany({
+      where: {
+        OR: skuIdentifiers,
+      },
+      include: { ProductInfo: true },
+    });
+
+    // Validate that all requested SKUs exist
+    const foundSkuKeys = new Set(
+      skuDetails.map((d) => `${d.ProductID}-${d.SKUName}`)
+    );
+    for (const sku of skus) {
+      if (!foundSkuKeys.has(`${sku.ProductID}-${sku.SKUName}`)) {
+        throw new Error(
+          `Product/SKU not found: ${sku.ProductID} - ${sku.SKUName}`
+        );
+      }
+    }
+
+    // Calculate totals and prepare updates
+    let totalOrderPrice = 0;
+    const sellerEarnings = new Map<string, number>();
+
+    for (const item of skus) {
+      const details = skuDetails.find(
+        (d) => d.ProductID === item.ProductID && d.SKUName === item.SKUName
+      );
+      if (!details) continue;
+
+      const itemTotal = details.Price * item.Quantity;
+      totalOrderPrice += itemTotal;
+
+      const seller = details.ProductInfo.LoginName;
+      const currentEarning = sellerEarnings.get(seller) || 0;
+      sellerEarnings.set(seller, currentEarning + itemTotal);
+    }
+
+    // Create Order
     const order = await prisma.orderInfo.create({
       data: {
         LoginName: loginName,
         AddressID: addressID,
         ProviderName: providerName,
         AccountID: accountIdValue,
+        TotalPrice: totalOrderPrice,
       },
     });
 
-    // Build a list of product IDs referenced by the request and validate
-    // they exist in the DB. We no longer split by seller/shop — create a
-    // single sub-order that contains all SKUs for this order.
-    const productIds = Array.from(
-      new Set(skus.map((s: any) => s.ProductID).filter((v: any) => v != null))
-    );
-
-    const products = productIds.length
-      ? await prisma.productInfo.findMany({
-          where: { ProductID: { in: productIds } },
-          select: { ProductID: true },
-        })
-      : [];
-
-    const existingIds = new Set(products.map((p) => p.ProductID));
-    for (const sku of skus) {
-      if (!existingIds.has(sku.ProductID)) {
-        throw new Error(`Product not found for ProductID=${sku.ProductID}`);
-      }
-    }
-
-    // Create a single sub-order for the whole order
+    // Create SubOrder
     const subOrder = await prisma.subOrderInfo.create({
       data: {
         OrderID: order.OrderID,
@@ -148,21 +173,34 @@ const createOrder = async (
         ActualDate: new Date(),
         ExpectedDate: new Date(),
         DeliveryPrice: 36363,
+        TotalSKUPrice: totalOrderPrice,
       },
     });
 
-    // Create details for every SKU under the single sub-order
-    for (const sku of skus) {
-      await prisma.subOrderDetail.create({
-        data: {
-          OrderID: order.OrderID,
-          SubOrderID: subOrder.SubOrderID,
-          ProductID: sku.ProductID,
-          SKUName: sku.SKUName,
-          Quantity: sku.Quantity,
-        },
+    // Create SubOrderDetails
+    await prisma.subOrderDetail.createMany({
+      data: skus.map((sku) => ({
+        OrderID: order.OrderID,
+        SubOrderID: subOrder.SubOrderID,
+        ProductID: sku.ProductID,
+        SKUName: sku.SKUName,
+        Quantity: sku.Quantity,
+      })),
+    });
+
+    // Update Seller Earnings
+    for (const [sellerLogin, earnings] of sellerEarnings) {
+      await prisma.seller.update({
+        where: { LoginName: sellerLogin },
+        data: { MoneyEarned: { increment: earnings } },
       });
     }
+
+    // Update Buyer MoneySpent
+    await prisma.buyer.update({
+      where: { LoginName: loginName },
+      data: { MoneySpent: { increment: totalOrderPrice } },
+    });
 
     // Return the order with nested sub-orders and their details
     const fullOrder = await prisma.orderInfo.findUnique({
@@ -207,6 +245,14 @@ const readOrderDetails = async (orderID: number) => {
   });
 }
 
+const getMoneySpent = async (loginName: string) => {
+  const buyer = await prisma.buyer.findUnique({
+    where: { LoginName: loginName },
+    select: { MoneySpent: true },
+  });
+  return buyer?.MoneySpent || 0;
+};
+
 export default {
   findMany,
   findUnique,
@@ -217,4 +263,5 @@ export default {
   updateCartQuantity,
   createOrder,
   readOrderDetails,
+  getMoneySpent,
 };

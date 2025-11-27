@@ -33,7 +33,7 @@ router.put(
   authenticate,
   authorize(["B", "A"]),
   buyerController.proceedCart
-)
+);
 
 router.delete(
   "/cart",
@@ -54,6 +54,13 @@ router.get(
   authenticate,
   authorize(["B", "A"]),
   buyerController.readOrderDetails
+);
+
+router.get(
+  "/spending",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.getMoneySpent
 );
 
 export default router;

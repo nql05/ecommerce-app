@@ -30,6 +30,7 @@ Express.js API server for the e-commerce website.
     - [`DELETE /buyer/cart` - Remove an item from cart](#delete-buyercart---remove-an-item-from-cart)
     - [`POST /buyer/order/create` - Create an order](#post-buyerordercreate---create-an-order)
     - [`GET /buyer/order/:id` - Get Order ID](#get-buyerorderid---get-order-id)
+    - [`GET /buyer/spending` - Get buyer spending](#get-buyerspending---get-buyer-spending)
   - [Admin API Endpoints](#admin-api-endpoints)
     - [`GET /admin/sellers` - List all sellers](#get-adminsellers---list-all-sellers)
     - [`GET /admin/sellers/:loginName` - Read seller details](#get-adminsellersloginname---read-seller-details)
@@ -1196,6 +1197,18 @@ Note: buyer routes are mounted under `/buyer`. Product browsing endpoints are pu
         "AddressType": "Home",
         "IsAddressDefault": true
     }
+}
+```
+
+### `GET /buyer/spending` - Get buyer spending
+
+**Request:** `GET /buyer/spending` with JWT (role `B` or `A`).
+
+**Response:** Object containing the total money spent by the buyer:
+
+```json
+{
+  "moneySpent": 43500000
 }
 ```
 
