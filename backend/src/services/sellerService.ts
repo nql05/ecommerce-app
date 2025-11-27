@@ -4,7 +4,7 @@ const listSellerProducts = async (loginName: string) => {
   try {
     return await prisma.productInfo.findMany({
       where: { LoginName: loginName },
-      include: { SKU: { include: { Comment: false } } },
+      include: { SKU: { include: { Comment: false, SKUImage: true } } },
     });
   } catch (error) {
     const originalMessage = error instanceof Error ? error.message : String(error);
