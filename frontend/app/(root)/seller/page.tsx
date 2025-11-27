@@ -16,6 +16,23 @@ export default function SellerDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Product Modal State
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    ProductName: "",
+    ProductBrand: "",
+    ProductCategory: "",
+    ProductDescription: "",
+    ProductMadeIn: "",
+    // Initial SKU data for new products
+    SKUName: "",
+    Price: "",
+    InStockNumber: "",
+    Size: "",
+    Weight: "",
+  });
+
   useEffect(() => {
     if (statsModalOpen) {
       document.body.style.overflow = "hidden";
@@ -71,6 +88,110 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleOpenAdd = () => {
+    setEditingProduct(null);
+    setFormData({
+      ProductName: "",
+      ProductBrand: "",
+      ProductCategory: "",
+      ProductDescription: "",
+      ProductMadeIn: "",
+      SKUName: "",
+      Price: "",
+      InStockNumber: "",
+      Size: "",
+      Weight: "",
+    });
+    setProductModalOpen(true);
+  };
+
+  const handleOpenEdit = (product: any) => {
+    setEditingProduct(product);
+    setFormData({
+      ProductName: product.ProductName,
+      ProductBrand: product.ProductBrand || "",
+      ProductCategory: product.ProductCategory,
+      ProductDescription: product.ProductDescription || "",
+      ProductMadeIn: product.ProductMadeIn,
+      SKUName: "", // Not editing SKUs
+      Price: "",
+      InStockNumber: "",
+      Size: "",
+      Weight: "",
+    });
+    setProductModalOpen(true);
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingProduct) {
+        // Edit
+        const payload = {
+          ProductName: formData.ProductName,
+          ProductBrand: formData.ProductBrand,
+          ProductCategory: formData.ProductCategory,
+          ProductDescription: formData.ProductDescription,
+          ProductMadeIn: formData.ProductMadeIn,
+        };
+        await api.put(
+          API_PATHS.SELLER.PRODUCTS.EDIT(editingProduct.ProductID),
+          payload
+        );
+        setProducts(
+          products.map((p) =>
+            p.ProductID === editingProduct.ProductID ? { ...p, ...payload } : p
+          )
+        );
+        alert("Product updated");
+      } else {
+        // Add
+        const payload = {
+          ProductName: formData.ProductName,
+          ProductBrand: formData.ProductBrand,
+          ProductCategory: formData.ProductCategory,
+          ProductDescription: formData.ProductDescription,
+          ProductMadeIn: formData.ProductMadeIn,
+          SKU: {
+            create: [
+              {
+                SKUName: formData.SKUName,
+                Price: Number(formData.Price),
+                InStockNumber: Number(formData.InStockNumber),
+                Size: Number(formData.Size),
+                Weight: Number(formData.Weight),
+                SKUImage: { create: [] }, // No image for now
+              },
+            ],
+          },
+        };
+        const res = await api.post(API_PATHS.SELLER.PRODUCTS.ADD, payload);
+        // Refresh list to get full structure including SKU
+        const listRes = await api.get(API_PATHS.SELLER.PRODUCTS.LIST);
+        setProducts(listRes.data);
+        alert("Product added");
+      }
+      setProductModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save product");
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setStatsModalOpen(false);
+        setProductModalOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <main className="pt-32 pb-16 relative">
       <div className="w-full px-4">
@@ -84,7 +205,10 @@ export default function SellerDashboard() {
               </span>
             </p>
           </div>
-          <button className="flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition">
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition"
+          >
             <Plus className="w-5 h-5" />
             Add Product
           </button>
@@ -141,7 +265,10 @@ export default function SellerDashboard() {
                   >
                     <BarChart2 className="w-5 h-5" />
                   </button>
-                  <button className="p-3 border-2 border-brand text-brand rounded-lg hover:bg-brand hover:text-white transition">
+                  <button
+                    onClick={() => handleOpenEdit(product)}
+                    className="p-3 border-2 border-brand text-brand rounded-lg hover:bg-brand hover:text-white transition"
+                  >
                     <Edit className="w-5 h-5" />
                   </button>
                   <button
@@ -325,6 +452,225 @@ export default function SellerDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Product Modal */}
+      {mounted &&
+        productModalOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+            onClick={() => setProductModalOpen(false)}
+          >
+            <div
+              className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                <h2 className="text-xl font-bold">
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </h2>
+                <button
+                  onClick={() => setProductModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProduct} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Product Name
+                    </label>
+                    <input
+                      required
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                      value={formData.ProductName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ProductName: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Brand
+                    </label>
+                    <input
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                      value={formData.ProductBrand}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ProductBrand: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <input
+                      required
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                      value={formData.ProductCategory}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ProductCategory: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Made In
+                    </label>
+                    <input
+                      required
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                      value={formData.ProductMadeIn}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ProductMadeIn: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                    rows={3}
+                    value={formData.ProductDescription}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        ProductDescription: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                {!editingProduct && (
+                  <div className="border-t pt-4 mt-4">
+                    <h3 className="font-semibold mb-3">Initial SKU Details</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          SKU Name
+                        </label>
+                        <input
+                          required
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                          value={formData.SKUName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, SKUName: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Price
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          min="1000"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                          value={formData.Price}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              Price: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Stock
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          min="1"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                          value={formData.InStockNumber}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              InStockNumber: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Size
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                          value={formData.Size}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              Size: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Weight
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                          value={formData.Weight}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              Weight: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setProductModalOpen(false)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition"
+                  >
+                    {editingProduct ? "Save Changes" : "Create Product"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>,
           document.body
