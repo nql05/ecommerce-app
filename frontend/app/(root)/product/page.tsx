@@ -19,8 +19,8 @@ export default function ProductList() {
       const fetchedProducts = response.data;
 
       // Transform database products to ProductCardProps format
-      const transformedProducts: ProductCardProps[] = fetchedProducts.map(
-        (product: any) => {
+      const transformedProducts: ProductCardProps[] = fetchedProducts
+        .map((product: any) => {
           // Get the first SKU image or use placeholder
           const firstSku = product.SKU?.[0];
           const imageUrl =
@@ -34,8 +34,8 @@ export default function ProductList() {
             name: product.ProductName,
             price,
           };
-        }
-      );
+        })
+        .sort((a, b) => (a.id || 0) - (b.id || 0));
 
       // Simulate pagination by slicing
       const itemsPerPage = 8;
@@ -47,9 +47,14 @@ export default function ProductList() {
         setHasMore(false);
       }
 
-      setProducts((prev) =>
-        pageNum === 0 ? pageProducts : [...prev, ...pageProducts]
-      );
+      setProducts((prev) => {
+        if (pageNum === 0) return pageProducts;
+        const existingIds = new Set(prev.map((p) => p.id));
+        const uniqueNewProducts = pageProducts.filter(
+          (p) => !existingIds.has(p.id)
+        );
+        return [...prev, ...uniqueNewProducts];
+      });
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setHasMore(false);
