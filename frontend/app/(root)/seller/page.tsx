@@ -34,6 +34,7 @@ export default function SellerDashboard() {
         InStockNumber: "",
         Size: "",
         Weight: "",
+        SKU_URL: "",
       },
     ],
   });
@@ -108,6 +109,7 @@ export default function SellerDashboard() {
           InStockNumber: "",
           Size: "",
           Weight: "",
+          SKU_URL: "",
         },
       ],
     });
@@ -134,6 +136,7 @@ export default function SellerDashboard() {
           InStockNumber: String(sku.InStockNumber),
           Size: String(sku.Size),
           Weight: String(sku.Weight),
+          SKU_URL: sku.SKUImage?.[0]?.SKU_URL || "",
         },
       ],
     });
@@ -156,6 +159,7 @@ export default function SellerDashboard() {
           InStockNumber: "",
           Size: "",
           Weight: "",
+          SKU_URL: "",
         },
       ],
     });
@@ -205,6 +209,7 @@ export default function SellerDashboard() {
           InStockNumber: "",
           Size: "",
           Weight: "",
+          SKU_URL: "",
         },
       ],
     });
@@ -256,6 +261,12 @@ export default function SellerDashboard() {
                   InStockNumber: Number(skuData.InStockNumber),
                   Size: Number(skuData.Size),
                   Weight: Number(skuData.Weight),
+                  SKUImage: {
+                    deleteMany: {},
+                    create: skuData.SKU_URL
+                      ? [{ SKU_URL: skuData.SKU_URL }]
+                      : [],
+                  },
                 },
               },
             },
@@ -274,7 +285,9 @@ export default function SellerDashboard() {
                 InStockNumber: Number(sku.InStockNumber),
                 Size: Number(sku.Size),
                 Weight: Number(sku.Weight),
-                SKUImage: { create: [] },
+                SKUImage: {
+                  create: sku.SKU_URL ? [{ SKU_URL: sku.SKU_URL }] : [],
+                },
               })),
             },
           };
@@ -303,7 +316,9 @@ export default function SellerDashboard() {
               InStockNumber: Number(sku.InStockNumber),
               Size: Number(sku.Size),
               Weight: Number(sku.Weight),
-              SKUImage: { create: [] },
+              SKUImage: {
+                create: sku.SKU_URL ? [{ SKU_URL: sku.SKU_URL }] : [],
+              },
             })),
           },
         };
@@ -902,6 +917,19 @@ export default function SellerDashboard() {
                               }
                             />
                           </div>
+                        </div>
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Image URL
+                          </label>
+                          <input
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                            value={sku.SKU_URL}
+                            onChange={(e) =>
+                              handleSkuChange(index, "SKU_URL", e.target.value)
+                            }
+                            placeholder="https://example.com/image.jpg"
+                          />
                         </div>
                       </div>
                     ))}
