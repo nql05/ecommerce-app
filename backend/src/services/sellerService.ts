@@ -75,23 +75,11 @@ const deleteProduct = async (id: number) => {
 
 const getEarnings = async (loginName: string) => {
   try {
-    // Calculate earnings dynamically from sales
-    const products = await prisma.productInfo.findMany({
+    const seller = await prisma.seller.findUnique({
       where: { LoginName: loginName },
-      select: { ProductID: true },
+      select: { MoneyEarned: true },
     });
-    const productIds = products.map((p) => p.ProductID);
-
-    const sales = await prisma.subOrderDetail.findMany({
-      where: { ProductID: { in: productIds } },
-      include: { SKU: true },
-    });
-
-    const totalEarnings = sales.reduce((acc, sale) => {
-      return acc + sale.Quantity * sale.SKU.Price;
-    }, 0);
-
-    return totalEarnings;
+    return seller?.MoneyEarned || 0;
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
