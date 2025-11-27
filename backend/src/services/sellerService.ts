@@ -69,6 +69,58 @@ const getEarnings = async (loginName: string) => {
   }
 };
 
+const getProductStatistics = async (productId: number) => {
+  try {
+    const sales = await prisma.subOrderDetail.findMany({
+      where: { ProductID: productId },
+      include: {
+        SubOrderInfo: true,
+        SKU: true,
+      },
+    });
+
+    let totalSold = 0;
+    let totalRevenue = 0;
+    const dailyStats: Record<string, number> = {};
+    const monthlyStats: Record<string, number> = {};
+    const yearlyStats: Record<string, number> = {};
+
+    for (const sale of sales) {
+      const qty = sale.Quantity;
+      const price = sale.SKU.Price;
+      const revenue = qty * price;
+      const date = new Date(sale.SubOrderInfo.ActualDate);
+
+      totalSold += qty;
+      totalRevenue += revenue;
+
+      const dayKey = date.toISOString().split("T")[0];
+      const monthKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+      const yearKey = `${date.getFullYear()}`;
+
+      dailyStats[dayKey] = (dailyStats[dayKey] || 0) + revenue;
+      monthlyStats[monthKey] = (monthlyStats[monthKey] || 0) + revenue;
+      yearlyStats[yearKey] = (yearlyStats[yearKey] || 0) + revenue;
+    }
+
+    return {
+      totalSold,
+      totalRevenue,
+      dailyStats,
+      monthlyStats,
+      yearlyStats,
+    };
+  } catch (error) {
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to get statistics for product ${productId}: ${originalMessage}`
+    );
+  }
+};
+
 export default {
   listSellerProducts,
   createProduct,
@@ -76,4 +128,5 @@ export default {
   updateProduct,
   deleteProduct,
   getEarnings,
+  getProductStatistics,
 };

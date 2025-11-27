@@ -31,7 +31,7 @@ export const login = async (req: Request, res: Response) => {
     // quick dev-only shortcut
     if (loginName === "deptrai" && password === "deptrai") {
       const token = generateToken({ loginName, role });
-      return res.json({ token });
+      return res.json({ token, role });
     }
 
     // Lookup user in DB
@@ -50,7 +50,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Unauthorized role" });
 
     const token = generateToken({ loginName: (user as any).LoginName, role: actualRole });
-    return res.json({ token });
+    return res.json({ token, role: actualRole });
   } catch (err) {
     res
       .status(500)

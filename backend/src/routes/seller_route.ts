@@ -44,6 +44,14 @@ router.delete(
   sellerController.removeProduct
 );
 
+// View product statistics
+router.get(
+  "/products/:id/statistics",
+  authenticate,
+  authorize(["S", "A"]),
+  sellerController.getProductStatistics
+);
+
 // View earnings
 router.get(
   "/earnings",

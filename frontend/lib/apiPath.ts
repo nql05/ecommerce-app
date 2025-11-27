@@ -29,7 +29,11 @@ export const API_PATHS = {
       SEARCH: "/seller/products/search", // Search seller's shop products
       DETAIL: (productId: string) => `/seller/products/${productId}`,
       ADD: "/seller/products/add",
+      DELETE: (productId: number) => `/seller/products/${productId}`,
+      STATISTICS: (productId: number) =>
+        `/seller/products/${productId}/statistics`,
     },
+    EARNINGS: "/seller/earnings",
   },
 
   // Admin APIs (placeholder for future implementation)
