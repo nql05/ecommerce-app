@@ -37,7 +37,7 @@ const readProduct = async (id: number) => {
   try {
     return await prisma.productInfo.findUnique({
       where: { ProductID: id },
-      include: { SKU: { include: { Comment: true } } },
+      include: { SKU: { include: { Comment: true, SKUImage: true } } },
     });
   } catch (error) {
     const originalMessage =

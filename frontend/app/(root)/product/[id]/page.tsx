@@ -7,7 +7,6 @@ import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
 import { CartContext } from "../../../../context/CartContext";
 import QuantityCounter from "../../../../components/QuantityCounter";
-import { getProductImage } from "../../../../utils/imageHelper";
 
 export default function ProductDetailPage({
   params,
@@ -131,11 +130,8 @@ export default function ProductDetailPage({
   const currentSku =
     product.SKU?.find((s: any) => s.SKUName === selectedSku) ||
     product.SKU?.[0];
-  const imageUrl = getProductImage(
-    product.ProductName,
-    currentSku?.SKUName,
-    currentSku?.SKUImage?.[0]?.SKU_URL
-  );
+  const imageUrl =
+    currentSku?.SKUImage?.[0]?.SKU_URL || "/images/placeholder.png";
   const price = currentSku?.Price || 0;
   const stock = currentSku?.InStockNumber || 0;
 

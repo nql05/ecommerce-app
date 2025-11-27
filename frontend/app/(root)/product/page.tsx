@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import ProductCard, { ProductCardProps } from "../../../components/ProductCard";
 import api from "../../../lib/api";
 import { API_PATHS } from "../../../lib/apiPath";
-import { getProductImage } from "../../../utils/imageHelper";
 
 export default function ProductList() {
   const [products, setProducts] = useState<ProductCardProps[]>([]);
@@ -29,11 +28,8 @@ export default function ProductList() {
             skus[0] || {}
           );
 
-          const imageUrl = getProductImage(
-            product.ProductName,
-            lowestPriceSku?.SKUName,
-            lowestPriceSku?.SKUImage?.[0]?.SKU_URL
-          );
+          const imageUrl =
+            lowestPriceSku?.SKUImage?.[0]?.SKU_URL || "/images/placeholder.png";
 
           const price = lowestPriceSku?.Price || 0;
 

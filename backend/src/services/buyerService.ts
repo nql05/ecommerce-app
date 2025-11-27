@@ -3,14 +3,28 @@ import prisma from "../mssql/prisma";
 const findMany = async (search?: string) => {
   return prisma.productInfo.findMany({
     where: search ? { ProductName: { contains: search } } : {},
-    include: { SKU: { include: { Comment: true } } },
+    include: {
+      SKU: {
+        include: {
+          Comment: true,
+          SKUImage: true,
+        },
+      },
+    },
   });
 };
 
 const findUnique = async (id: number) => {
   return prisma.productInfo.findUnique({
     where: { ProductID: id },
-    include: { SKU: { include: { Comment: true } } },
+    include: {
+      SKU: {
+        include: {
+          Comment: true,
+          SKUImage: true,
+        },
+      },
+    },
   });
 };
 
@@ -147,7 +161,7 @@ const createOrder = async (
   providerName: string,
   deliveryMethod: string,
   deliveryProvider: string,
-  accountID?: string | number | null,
+  accountID?: string | number | null
 ) => {
   try {
     if (!Array.isArray(skus) || skus.length === 0) {
@@ -304,7 +318,7 @@ const readOrderDetails = async (orderID: number) => {
       AddressInfo: true,
     },
   });
-}
+};
 
 const getMoneySpent = async (loginName: string) => {
   const buyer = await prisma.buyer.findUnique({
