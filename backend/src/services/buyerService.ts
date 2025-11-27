@@ -210,27 +210,6 @@ const createOrder = async (
       },
     });
 
-    // Build a list of product IDs referenced by the request and validate
-    // they exist in the DB. We no longer split by seller/shop — create a
-    // single sub-order that contains all SKUs for this order.
-    const productIds = Array.from(
-      new Set(skus.map((s: any) => s.ProductID).filter((v: any) => v != null))
-    );
-
-    const products = productIds.length
-      ? await prisma.productInfo.findMany({
-          where: { ProductID: { in: productIds } },
-          select: { ProductID: true },
-        })
-      : [];
-
-    const existingIds = new Set(products.map((p: any) => p.ProductID));
-    for (const sku of skus) {
-      if (!existingIds.has(sku.ProductID)) {
-        throw new Error(`Product not found for ProductID=${sku.ProductID}`);
-      }
-    }
-
     // Create a single sub-order for the whole order
     const subOrder = await prisma.subOrderInfo.create({
       data: {
