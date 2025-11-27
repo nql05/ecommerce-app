@@ -56,4 +56,11 @@ router.get(
   buyerController.readOrderDetails
 );
 
+router.get(
+  "/spending",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.getMoneySpent
+);
+
 export default router;

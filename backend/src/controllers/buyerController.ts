@@ -239,6 +239,17 @@ export const readOrderDetails = async (req: Request, res: Response) => {
   }
 };
 
+export const getMoneySpent = async (req: Request, res: Response) => {
+  try {
+    const moneySpent = await buyerService.getMoneySpent((req as any).user.loginName);
+    return res.json({ moneySpent });
+  } catch (err) {
+    console.error(`getMoneySpent error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+  }
+};
+
 export default {
   listProducts,
   getProductDetails,
@@ -250,4 +261,5 @@ export default {
   updateCart,
   // createOrder,
   readOrderDetails,
+  getMoneySpent,
 };
