@@ -17,6 +17,17 @@ export default function SellerDashboard() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (statsModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [statsModalOpen]);
+
+  useEffect(() => {
     setMounted(true);
     const fetchData = async () => {
       try {
@@ -238,6 +249,65 @@ export default function SellerDashboard() {
                                 <span className="font-bold text-brand">
                                   {formatVND(revenue as number)}
                                 </span>
+                              </div>
+                            )
+                          )
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">
+                            No sales data yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Yearly Stats */}
+                    <div>
+                      <h3 className="font-bold mb-4 text-lg">Yearly Revenue</h3>
+                      <div className="space-y-2">
+                        {Object.entries(currentStats.yearlyStats || {}).length >
+                        0 ? (
+                          Object.entries(currentStats.yearlyStats).map(
+                            ([year, revenue]) => (
+                              <div
+                                key={year}
+                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                              >
+                                <span className="font-medium">{year}</span>
+                                <span className="font-bold text-brand">
+                                  {formatVND(revenue as number)}
+                                </span>
+                              </div>
+                            )
+                          )
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">
+                            No sales data yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SKU Stats */}
+                    <div>
+                      <h3 className="font-bold mb-4 text-lg">Revenue by SKU</h3>
+                      <div className="space-y-2">
+                        {Object.entries(currentStats.skuStats || {}).length >
+                        0 ? (
+                          Object.entries(currentStats.skuStats).map(
+                            ([sku, stats]: [string, any]) => (
+                              <div
+                                key={sku}
+                                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                              >
+                                <span className="font-medium">{sku}</span>
+                                <div className="text-right">
+                                  <p className="font-bold text-brand">
+                                    {formatVND(stats.revenue)}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {stats.quantity} sold
+                                  </p>
+                                </div>
                               </div>
                             )
                           )

@@ -7,8 +7,11 @@ const listSellerProducts = async (loginName: string) => {
       include: { SKU: { include: { Comment: false, SKUImage: true } } },
     });
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to list products for ${loginName}: ${originalMessage}`);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to list products for ${loginName}: ${originalMessage}`
+    );
   }
 };
 
@@ -18,10 +21,15 @@ const createProduct = async (loginName: string, data: any) => {
     const { ProductID, ...payload } = data || {};
 
     // Force the LoginName from authenticated user
-    return await prisma.productInfo.create({ data: { ...payload, LoginName: loginName } });
+    return await prisma.productInfo.create({
+      data: { ...payload, LoginName: loginName },
+    });
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to create product for ${loginName}: ${originalMessage}`);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to create product for ${loginName}: ${originalMessage}`
+    );
   }
 };
 
@@ -32,7 +40,8 @@ const readProduct = async (id: number) => {
       include: { SKU: { include: { Comment: true } } },
     });
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to read product ${id}: ${originalMessage}`);
   }
 };
@@ -41,9 +50,13 @@ const updateProduct = async (id: number, data: any) => {
   try {
     // Do not allow modifying identity columns
     const { ProductID, SKUID, ...payload } = data || {};
-    return await prisma.productInfo.update({ where: { ProductID: id }, data: payload });
+    return await prisma.productInfo.update({
+      where: { ProductID: id },
+      data: payload,
+    });
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to update product ${id}: ${originalMessage}`);
   }
 };
@@ -52,20 +65,37 @@ const deleteProduct = async (id: number) => {
   try {
     return await prisma.productInfo.delete({ where: { ProductID: id } });
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to delete product ${id}: ${originalMessage}`);
   }
 };
 
 const getEarnings = async (loginName: string) => {
   try {
-    const seller = await prisma.seller.findUnique({
+    // Calculate earnings dynamically from sales
+    const products = await prisma.productInfo.findMany({
       where: { LoginName: loginName },
+      select: { ProductID: true },
     });
-    return seller?.MoneyEarned ?? 0;
+    const productIds = products.map((p) => p.ProductID);
+
+    const sales = await prisma.subOrderDetail.findMany({
+      where: { ProductID: { in: productIds } },
+      include: { SKU: true },
+    });
+
+    const totalEarnings = sales.reduce((acc, sale) => {
+      return acc + sale.Quantity * sale.SKU.Price;
+    }, 0);
+
+    return totalEarnings;
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to get earnings for ${loginName}: ${originalMessage}`);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to get earnings for ${loginName}: ${originalMessage}`
+    );
   }
 };
 
@@ -84,6 +114,7 @@ const getProductStatistics = async (productId: number) => {
     const dailyStats: Record<string, number> = {};
     const monthlyStats: Record<string, number> = {};
     const yearlyStats: Record<string, number> = {};
+    const skuStats: Record<string, { quantity: number; revenue: number }> = {};
 
     for (const sale of sales) {
       const qty = sale.Quantity;
@@ -103,6 +134,13 @@ const getProductStatistics = async (productId: number) => {
       dailyStats[dayKey] = (dailyStats[dayKey] || 0) + revenue;
       monthlyStats[monthKey] = (monthlyStats[monthKey] || 0) + revenue;
       yearlyStats[yearKey] = (yearlyStats[yearKey] || 0) + revenue;
+
+      const skuName = sale.SKUName;
+      if (!skuStats[skuName]) {
+        skuStats[skuName] = { quantity: 0, revenue: 0 };
+      }
+      skuStats[skuName].quantity += qty;
+      skuStats[skuName].revenue += revenue;
     }
 
     return {
@@ -111,6 +149,7 @@ const getProductStatistics = async (productId: number) => {
       dailyStats,
       monthlyStats,
       yearlyStats,
+      skuStats,
     };
   } catch (error) {
     const originalMessage =
