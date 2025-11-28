@@ -97,7 +97,10 @@ export default function Header() {
               </div>
             </div>
           ) : (
-            <Link href="/role" className="bg-white text-brand px-4 py-1 rounded-full font-semibold hover:bg-gray-100 transition">
+            <Link
+              href="/role"
+              className="bg-white text-brand px-4 py-1 rounded-full font-semibold hover:bg-gray-100 transition"
+            >
               Sign In
             </Link>
           )}
