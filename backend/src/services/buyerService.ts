@@ -3,14 +3,28 @@ import prisma from "../mssql/prisma";
 const findMany = async (search?: string) => {
   return prisma.productInfo.findMany({
     where: search ? { ProductName: { contains: search } } : {},
-    include: { SKU: { include: { Comment: true } } },
+    include: {
+      SKU: {
+        include: {
+          Comment: true,
+          SKUImage: true,
+        },
+      },
+    },
   });
 };
 
 const findUnique = async (id: number) => {
   return prisma.productInfo.findUnique({
     where: { ProductID: id },
-    include: { SKU: { include: { Comment: true } } },
+    include: {
+      SKU: {
+        include: {
+          Comment: true,
+          SKUImage: true,
+        },
+      },
+    },
   });
 };
 
@@ -29,7 +43,36 @@ const addToCart = async (
   const cart = await prisma.cart.findFirst({ where: { LoginName: loginName } });
   if (!cart) throw new Error("Cart not found");
 
-  return prisma.storedSKU.upsert({
+  // Get the SKU to check price and validate
+  const sku = await prisma.sKU.findUnique({
+    where: {
+      ProductID_SKUName: {
+        ProductID: productID,
+        SKUName: skuName,
+      },
+    },
+  });
+
+  if (!sku) {
+    throw new Error(
+      `SKU not found: ProductID=${productID}, SKUName=${skuName}`
+    );
+  }
+
+  // Validate quantity to prevent overflow (INT max is 2,147,483,647)
+  // If Price * Quantity would exceed INT max, reject it
+  const maxSafeQuantity = Math.floor(2147483647 / sku.Price);
+  if (quantity > maxSafeQuantity) {
+    throw new Error(`Quantity too large. Maximum allowed: ${maxSafeQuantity}`);
+  }
+
+  // Validate against stock
+  if (quantity > sku.InStockNumber) {
+    throw new Error(`Insufficient stock. Available: ${sku.InStockNumber}`);
+  }
+
+  // Check if item already exists in cart
+  const existingItem = await prisma.storedSKU.findUnique({
     where: {
       ProductID_CartID_SKUName: {
         ProductID: productID,
@@ -37,21 +80,56 @@ const addToCart = async (
         SKUName: skuName,
       },
     },
-    update: { Quantity: { increment: quantity } },
-    create: {
-      CartID: cart.CartID,
-      ProductID: productID,
-      SKUName: skuName,
-      Quantity: quantity,
-    },
   });
+
+  if (existingItem) {
+    const newQuantity = existingItem.Quantity + quantity;
+
+    // Validate against stock
+    if (newQuantity > sku.InStockNumber) {
+      throw new Error(
+        `Insufficient stock. Available: ${sku.InStockNumber}. You already have ${existingItem.Quantity} in cart.`
+      );
+    }
+
+    // Item exists: INCREMENT quantity
+    return prisma.storedSKU.update({
+      where: {
+        ProductID_CartID_SKUName: {
+          ProductID: productID,
+          CartID: cart.CartID,
+          SKUName: skuName,
+        },
+      },
+      data: { Quantity: newQuantity },
+    });
+  } else {
+    // Item doesn't exist: CREATE new
+    return prisma.storedSKU.create({
+      data: {
+        CartID: cart.CartID,
+        ProductID: productID,
+        SKUName: skuName,
+        Quantity: quantity,
+      },
+    });
+  }
 };
 
 const getCart = async (loginName: string) => {
   return prisma.cart.findFirst({
     where: { LoginName: loginName },
     include: {
-      StoredSKU: { include: { SKU: { include: { ProductInfo: true } } } },
+      StoredSKU: {
+        include: {
+          SKU: {
+            include: {
+              ProductInfo: true,
+              SKUImage: true,
+            },
+          },
+        },
+      },
     },
   });
 };
@@ -101,7 +179,7 @@ const createOrder = async (
   providerName: string,
   deliveryMethod: string,
   deliveryProvider: string,
-  accountID?: string | number | null,
+  accountID?: string | number | null
 ) => {
   try {
     if (!Array.isArray(skus) || skus.length === 0) {
@@ -164,7 +242,7 @@ const createOrder = async (
       },
     });
 
-    // Create SubOrder
+    // Create a single sub-order for the whole order
     const subOrder = await prisma.subOrderInfo.create({
       data: {
         OrderID: order.OrderID,
@@ -210,16 +288,31 @@ const createOrder = async (
 
     return fullOrder;
   } catch (error) {
-    const originalMessage = error instanceof Error ? error.message : String(error);
+    const originalMessage =
+      error instanceof Error ? error.message : String(error);
 
-    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362")) {
-      throw new Error("Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost");
+    if (
+      originalMessage.includes(
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362"
+      )
+    ) {
+      throw new Error(
+        "Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost"
+      );
     }
 
-    if (originalMessage.includes("Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29")) {
-      throw new Error("Invalid order: delivery method not found, choose among Economy, Express, Standard");
+    if (
+      originalMessage.includes(
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29"
+      )
+    ) {
+      throw new Error(
+        "Invalid order: delivery method not found, choose among Economy, Express, Standard"
+      );
     }
-    throw new Error(`Failed to create order for ${loginName}: ${originalMessage}`);
+    throw new Error(
+      `Failed to create order for ${loginName}: ${originalMessage}`
+    );
   }
 };
 
@@ -233,7 +326,7 @@ const readOrderDetails = async (orderID: number) => {
             include: {
               SKU: {
                 include: {
-                  ProductInfo: true
+                  ProductInfo: true,
                 },
               },
             },
@@ -243,7 +336,7 @@ const readOrderDetails = async (orderID: number) => {
       AddressInfo: true,
     },
   });
-}
+};
 
 const getMoneySpent = async (loginName: string) => {
   const buyer = await prisma.buyer.findUnique({
@@ -251,6 +344,69 @@ const getMoneySpent = async (loginName: string) => {
     select: { MoneySpent: true },
   });
   return buyer?.MoneySpent || 0;
+};
+
+const addComment = async (
+  loginName: string,
+  productID: number,
+  skuName: string,
+  content: string,
+  ratings: number
+) => {
+  return prisma.comment.create({
+    data: {
+      LoginName: loginName,
+      ProductID: productID,
+      SKUName: skuName,
+      Content: content,
+      Ratings: ratings,
+    },
+  });
+};
+
+const deleteComment = async (loginName: string, commentID: number) => {
+  const comment = await prisma.comment.findUnique({
+    where: { CommentID: commentID },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  if (comment.LoginName !== loginName) {
+    throw new Error("Unauthorized to delete this comment");
+  }
+
+  return prisma.comment.delete({
+    where: { CommentID: commentID },
+  });
+};
+
+const editComment = async (
+  loginName: string,
+  commentID: number,
+  content: string,
+  ratings: number
+) => {
+  const comment = await prisma.comment.findUnique({
+    where: { CommentID: commentID },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  if (comment.LoginName !== loginName) {
+    throw new Error("Unauthorized to edit this comment");
+  }
+
+  return prisma.comment.update({
+    where: { CommentID: commentID },
+    data: {
+      Content: content,
+      Ratings: ratings,
+    },
+  });
 };
 
 export default {
@@ -264,4 +420,7 @@ export default {
   createOrder,
   readOrderDetails,
   getMoneySpent,
+  addComment,
+  deleteComment,
+  editComment,
 };

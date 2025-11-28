@@ -21,45 +21,45 @@ model AddressInfo {
   UserInfo           UserInfo    @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__AddressIn__Login__37A5467C")
   OrderInfo          OrderInfo[]
 
-  @@id([LoginName, AddressID], map: "PK__AddressI__7B15A65F88F97C2B")
+  @@id([LoginName, AddressID], map: "PK__AddressI__7B15A65F4BA8BA2C")
 }
 
 model AppliedVoucher {
   OrderID      Int
   SubOrderID   Int
   VoucherCode  String       @db.VarChar(10)
-  Voucher      Voucher      @relation(fields: [VoucherCode], references: [Code], onDelete: Cascade, map: "FK__AppliedVo__Vouch__00200768")
-  SubOrderInfo SubOrderInfo @relation(fields: [OrderID, SubOrderID], references: [OrderID, SubOrderID], onDelete: Cascade, map: "FK__AppliedVoucher__7F2BE32F")
+  Voucher      Voucher      @relation(fields: [VoucherCode], references: [Code], onDelete: Cascade, map: "FK__AppliedVo__Vouch__7F2BE32F")
+  SubOrderInfo SubOrderInfo @relation(fields: [OrderID, SubOrderID], references: [OrderID, SubOrderID], onDelete: Cascade, map: "FK__AppliedVoucher__7E37BEF6")
 
-  @@id([OrderID, SubOrderID, VoucherCode], map: "PK__AppliedV__476E502A14E77F20")
+  @@id([OrderID, SubOrderID, VoucherCode], map: "PK__AppliedV__476E502AC67A92FA")
 }
 
 model Buyer {
-  LoginName  String    @id(map: "PK__Buyer__DB8464FEA556D4CE") @db.VarChar(100)
+  LoginName  String    @id(map: "PK__Buyer__DB8464FE80E4D5B3") @db.VarChar(100)
   MoneySpent Int       @default(0, map: "DF__Buyer__MoneySpen__29572725")
   UserInfo   UserInfo  @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Buyer__LoginName__2B3F6F97")
   Comment    Comment[]
 }
 
 model Cart {
-  CartID    Int         @id(map: "PK__Cart__51BCD797E73F44E7") @default(autoincrement())
+  CartID    Int         @id(map: "PK__Cart__51BCD797485BEBDF") @default(autoincrement())
   LoginName String      @db.VarChar(100)
-  TotalCost Int         @default(0, map: "DF__Cart__TotalCost__4F7CD00D")
-  UserInfo  UserInfo    @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Cart__LoginName__5070F446")
+  TotalCost Int         @default(0, map: "DF__Cart__TotalCost__4E88ABD4")
+  UserInfo  UserInfo    @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Cart__LoginName__4F7CD00D")
   StoredSKU StoredSKU[]
 }
 
 model Comment {
-  CommentID       Int            @id(map: "PK__Comment__C3B4DFAA24DFCDAE") @default(autoincrement())
+  CommentID       Int            @id(map: "PK__Comment__C3B4DFAAE60C3512") @default(autoincrement())
   LoginName       String         @db.VarChar(100)
   ProductID       Int?
   SKUName         String?        @db.VarChar(100)
   Ratings         Int?
   Content         String?        @db.VarChar(500)
   ParentCommentID Int?
-  SKU             SKU?           @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__Comment__6C190EBB")
-  Buyer           Buyer          @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Comment__LoginNa__6A30C649")
-  Comment         Comment?       @relation("CommentToComment", fields: [ParentCommentID], references: [CommentID], onDelete: NoAction, onUpdate: NoAction, map: "FK__Comment__ParentC__6D0D32F4")
+  SKU             SKU?           @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__Comment__6B24EA82")
+  Buyer           Buyer          @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Comment__LoginNa__693CA210")
+  Comment         Comment?       @relation("CommentToComment", fields: [ParentCommentID], references: [CommentID], onDelete: NoAction, onUpdate: NoAction, map: "FK__Comment__ParentC__6C190EBB")
   other_Comment   Comment[]      @relation("CommentToComment")
   CommentImage    CommentImage[]
 }
@@ -67,13 +67,13 @@ model Comment {
 model CommentImage {
   CommentID  Int
   CommentURL String  @db.VarChar(200)
-  Comment    Comment @relation(fields: [CommentID], references: [CommentID], onDelete: Cascade, map: "FK__CommentIm__Comme__6FE99F9F")
+  Comment    Comment @relation(fields: [CommentID], references: [CommentID], onDelete: Cascade, map: "FK__CommentIm__Comme__6EF57B66")
 
-  @@id([CommentID, CommentURL], map: "PK__CommentI__6B1A782425271B4E")
+  @@id([CommentID, CommentURL], map: "PK__CommentI__6B1A78243B842E28")
 }
 
 model DeliveryMethod {
-  MethodName      String            @id(map: "PK__Delivery__218CFB16F2BD34DC") @db.VarChar(100)
+  MethodName      String            @id(map: "PK__Delivery__218CFB16AE584867") @db.VarChar(100)
   ProvideDelivery ProvideDelivery[]
   SubOrderInfo    SubOrderInfo[]
 }
@@ -81,52 +81,53 @@ model DeliveryMethod {
 model DeliveryPartner {
   LoginName        String           @db.VarChar(100)
   ProviderName     String           @db.VarChar(100)
-  UserInfo         UserInfo         @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__DeliveryP__Login__0A9D95DB")
-  DeliveryProvider DeliveryProvider @relation(fields: [ProviderName], references: [ProviderName], onUpdate: NoAction, map: "FK__DeliveryP__Provi__0B91BA14")
+  
+  Info         UserInfo         @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__DeliveryP__Login__09A971A2")
+  DeliveryProvider DeliveryProvider @relation(fields: [ProviderName], references: [ProviderName], onUpdate: NoAction, map: "FK__DeliveryP__Provi__0A9D95DB")
 
-  @@id([LoginName, ProviderName], map: "PK__Delivery__8C5433306EEB8BBA")
+  @@id([LoginName, ProviderName], map: "PK__Delivery__8C543330B39F1E1F")
 }
 
 model DeliveryProvider {
-  ProviderName    String            @id(map: "PK__Delivery__7D057CE4E466A898") @db.VarChar(100)
+  ProviderName    String            @id(map: "PK__Delivery__7D057CE47EF66507") @db.VarChar(100)
   DeliveryPartner DeliveryPartner[]
   ProvideDelivery ProvideDelivery[]
   SubOrderInfo    SubOrderInfo[]
 }
 
 model FlatDiscountVoucher {
-  Code           String @id(map: "PK__FlatDisc__A25C5AA60A2EC896") @db.VarChar(10)
-  DiscountAmount Int    @default(0, map: "DF__FlatDisco__Disco__07C12930")
+  Code           String @id(map: "PK__FlatDisc__A25C5AA65CF7205E") @db.VarChar(10)
+  DiscountAmount Int    @default(0, map: "DF__FlatDisco__Disco__06CD04F7")
 }
 
 model OrderInfo {
-  OrderID      Int            @id(map: "PK__OrderInf__C3905BAF34DCEC3A") @default(autoincrement())
+  OrderID      Int            @id(map: "PK__OrderInf__C3905BAFBE0AB5F8") @default(autoincrement())
   LoginName    String         @db.VarChar(100)
-  OrderDate    DateTime       @default(now(), map: "DF__OrderInfo__Order__3B75D760")
-  TotalPrice   Int            @default(0, map: "DF__OrderInfo__Total__3C69FB99")
-  ProviderName String         @default("VCB", map: "DF__OrderInfo__Provi__3D5E1FD2") @db.VarChar(100)
-  AccountID    String?        @unique(map: "UQ__OrderInf__349DA587C5778314") @db.VarChar(30)
+  OrderDate    DateTime       @default(now(), map: "DF__OrderInfo__Order__3A81B327")
+  TotalPrice   Int            @default(0, map: "DF__OrderInfo__Total__3B75D760")
+  ProviderName String         @default("VCB", map: "DF__OrderInfo__Provi__3C69FB99") @db.VarChar(100)
+  AccountID    String?        @db.VarChar(30)
   AddressID    Int
-  AddressInfo  AddressInfo    @relation(fields: [LoginName, AddressID], references: [LoginName, AddressID], onDelete: Cascade, map: "FK__OrderInfo__3F466844")
+  AddressInfo  AddressInfo    @relation(fields: [LoginName, AddressID], references: [LoginName, AddressID], onDelete: Cascade, map: "FK__OrderInfo__3E52440B")
   SubOrderInfo SubOrderInfo[]
 }
 
 model PercentageVoucher {
-  Code               String  @id(map: "PK__Percenta__A25C5AA67256141D") @db.VarChar(10)
-  PercentageDiscount Decimal @default(0.0, map: "DF__Percentag__Perce__02FC7413") @db.Decimal(10, 2)
-  MaxAmountAllowed   Int     @default(1, map: "DF__Percentag__MaxAm__03F0984C")
-  Voucher            Voucher @relation(fields: [Code], references: [Code], onDelete: Cascade, map: "FK__Percentage__Code__04E4BC85")
+  Code               String  @id(map: "PK__Percenta__A25C5AA6D8D9E9F3") @db.VarChar(10)
+  PercentageDiscount Decimal @default(0.0, map: "DF__Percentag__Perce__02084FDA") @db.Decimal(10, 2)
+  MaxAmountAllowed   Int     @default(1, map: "DF__Percentag__MaxAm__02FC7413")
+  Voucher            Voucher @relation(fields: [Code], references: [Code], onDelete: Cascade, map: "FK__Percentage__Code__03F0984C")
 }
 
 model ProductInfo {
-  ProductID          Int            @id(map: "PK__ProductI__B40CC6EDBEA561AD") @default(autoincrement())
+  ProductID          Int            @id(map: "PK__ProductI__B40CC6EDF766A355") @default(autoincrement())
   LoginName          String         @db.VarChar(100)
   ProductName        String         @db.VarChar(100)
   ProductBrand       String?        @db.VarChar(100)
   ProductCategory    String         @db.VarChar(100)
   ProductDescription String?        @db.VarChar(500)
   ProductMadeIn      String         @db.VarChar(100)
-  Seller             Seller         @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__ProductIn__Login__571DF1D5")
+  Seller             Seller         @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__ProductIn__Login__5629CD9C")
   SKU                SKU[]
   VoucherOffer       VoucherOffer[]
 }
@@ -134,17 +135,17 @@ model ProductInfo {
 model ProvideDelivery {
   ProviderName     String           @db.VarChar(100)
   MethodName       String           @db.VarChar(100)
-  DeliveryMethod   DeliveryMethod   @relation(fields: [MethodName], references: [MethodName], onDelete: Cascade, map: "FK__ProvideDe__Metho__5441852A")
-  DeliveryProvider DeliveryProvider @relation(fields: [ProviderName], references: [ProviderName], onDelete: Cascade, map: "FK__ProvideDe__Provi__534D60F1")
+  DeliveryMethod   DeliveryMethod   @relation(fields: [MethodName], references: [MethodName], onDelete: Cascade, map: "FK__ProvideDe__Metho__534D60F1")
+  DeliveryProvider DeliveryProvider @relation(fields: [ProviderName], references: [ProviderName], onDelete: Cascade, map: "FK__ProvideDe__Provi__52593CB8")
 
-  @@id([ProviderName, MethodName], map: "PK__ProvideD__0F1DB35518900D10")
+  @@id([ProviderName, MethodName], map: "PK__ProvideD__0F1DB355BDBA25BB")
 }
 
 model Seller {
-  LoginName     String        @id(map: "PK__Seller__DB8464FED674ABCC") @db.VarChar(100)
-  ShopName      String        @unique(map: "UQ__Seller__649A7D963B10FF85") @db.VarChar(100)
-  CitizenIDCard String        @unique(map: "UQ__Seller__029D5F145A5AFA13") @db.VarChar(30)
-  SellerName    String        @unique(map: "UQ__Seller__030470FA7410AB97") @db.VarChar(50)
+  LoginName     String        @id(map: "PK__Seller__DB8464FEA75E52D6") @db.VarChar(100)
+  ShopName      String        @unique(map: "UQ__Seller__649A7D96C74F2849") @db.VarChar(100)
+  CitizenIDCard String        @unique(map: "UQ__Seller__029D5F14A4D24DCC") @db.VarChar(30)
+  SellerName    String        @unique(map: "UQ__Seller__030470FA27E577BF") @db.VarChar(50)
   MoneyEarned   Int           @default(0, map: "DF__Seller__MoneyEar__30F848ED")
   ProductInfo   ProductInfo[]
   UserInfo      UserInfo      @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Seller__LoginNam__31EC6D26")
@@ -158,32 +159,32 @@ model SKU {
   InStockNumber  Int
   Weight         Int?
   Comment        Comment[]
-  ProductInfo    ProductInfo      @relation(fields: [ProductID], references: [ProductID], onUpdate: NoAction, map: "FK__SKU__ProductID__59FA5E80")
+  ProductInfo    ProductInfo      @relation(fields: [ProductID], references: [ProductID], onUpdate: NoAction, map: "FK__SKU__ProductID__59063A47")
   SKUImage       SKUImage[]
   StoredSKU      StoredSKU[]
   SubOrderDetail SubOrderDetail[]
 
-  @@id([ProductID, SKUName], map: "PK__SKU__5C8C537B74A8570A")
+  @@id([ProductID, SKUName], map: "PK__SKU__5C8C537BC89AF1AD")
 }
 
 model SKUImage {
   ProductID Int
   SKUName   String @db.VarChar(100)
   SKU_URL   String @db.VarChar(200)
-  SKU       SKU    @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__SKUImage__66603565")
+  SKU       SKU    @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__SKUImage__656C112C")
 
-  @@id([ProductID, SKUName, SKU_URL], map: "PK__SKUImage__9389F47B54BA5A89")
+  @@id([ProductID, SKUName, SKU_URL], map: "PK__SKUImage__9389F47B323DA847")
 }
 
 model StoredSKU {
   CartID    Int
   ProductID Int
   SKUName   String @db.VarChar(100)
-  Quantity  Int    @default(0, map: "DF__StoredSKU__Quant__5CD6CB2B")
-  SKU       SKU    @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__StoredSKU__5EBF139D")
-  Cart      Cart   @relation(fields: [CartID], references: [CartID], onDelete: Cascade, map: "FK__StoredSKU__CartI__5DCAEF64")
+  Quantity  Int    @default(0, map: "DF__StoredSKU__Quant__5BE2A6F2")
+  SKU       SKU    @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__StoredSKU__5DCAEF64")
+  Cart      Cart   @relation(fields: [CartID], references: [CartID], onDelete: Cascade, map: "FK__StoredSKU__CartI__5CD6CB2B")
 
-  @@id([ProductID, CartID, SKUName], map: "PK__StoredSK__BF9F02CDDFD62E08")
+  @@id([ProductID, CartID, SKUName], map: "PK__StoredSK__BF9F02CDB61F7802")
 }
 
 model SubOrderDetail {
@@ -191,38 +192,38 @@ model SubOrderDetail {
   SubOrderID   Int
   ProductID    Int
   SKUName      String       @db.VarChar(100)
-  Quantity     Int          @default(0, map: "DF__SubOrderD__Quant__619B8048")
-  SubOrderInfo SubOrderInfo @relation(fields: [OrderID, SubOrderID], references: [OrderID, SubOrderID], onDelete: Cascade, map: "FK__SubOrderDetail__628FA481")
-  SKU          SKU          @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__SubOrderDetail__6383C8BA")
+  Quantity     Int          @default(0, map: "DF__SubOrderD__Quant__60A75C0F")
+  SubOrderInfo SubOrderInfo @relation(fields: [OrderID, SubOrderID], references: [OrderID, SubOrderID], onDelete: Cascade, map: "FK__SubOrderDetail__619B8048")
+  SKU          SKU          @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__SubOrderDetail__628FA481")
 
-  @@id([SubOrderID, SKUName], map: "PK__SubOrder__309086059BECABFE")
+  @@id([SubOrderID, ProductID, SKUName], map: "PK__SubOrder__30908605BE3C39BB")
 }
 
 model SubOrderInfo {
   OrderID              Int
   SubOrderID           Int              @default(autoincrement())
-  TotalSKUPrice        Int              @default(0, map: "DF__SubOrderI__Total__4222D4EF")
-  ShippingStatus       String           @default("Preparing", map: "DF__SubOrderI__Shipp__4316F928") @db.VarChar(50)
+  TotalSKUPrice        Int              @default(0, map: "DF__SubOrderI__Total__412EB0B6")
+  ShippingStatus       String           @default("Preparing", map: "DF__SubOrderI__Shipp__4222D4EF") @db.VarChar(50)
   ActualDate           DateTime
   ExpectedDate         DateTime
   DeliveryMethodName   String           @db.VarChar(100)
   DeliveryProviderName String           @db.VarChar(100)
-  DeliveryPrice        Int              @default(0, map: "DF__SubOrderI__Deliv__44FF419A")
+  DeliveryPrice        Int              @default(0, map: "DF__SubOrderI__Deliv__440B1D61")
   AppliedVoucher       AppliedVoucher[]
   SubOrderDetail       SubOrderDetail[]
-  DeliveryMethod       DeliveryMethod   @relation(fields: [DeliveryMethodName], references: [MethodName], onDelete: Cascade, map: "FK__SubOrderI__Deliv__4BAC3F29")
-  DeliveryProvider     DeliveryProvider @relation(fields: [DeliveryProviderName], references: [ProviderName], onDelete: Cascade, map: "FK__SubOrderI__Deliv__4CA06362")
-  OrderInfo            OrderInfo        @relation(fields: [OrderID], references: [OrderID], onDelete: Cascade, map: "FK__SubOrderI__Order__45F365D3")
+  DeliveryMethod       DeliveryMethod   @relation(fields: [DeliveryMethodName], references: [MethodName], onDelete: Cascade, map: "FK__SubOrderI__Deliv__4AB81AF0")
+  DeliveryProvider     DeliveryProvider @relation(fields: [DeliveryProviderName], references: [ProviderName], onDelete: Cascade, map: "FK__SubOrderI__Deliv__4BAC3F29")
+  OrderInfo            OrderInfo        @relation(fields: [OrderID], references: [OrderID], onDelete: Cascade, map: "FK__SubOrderI__Order__44FF419A")
 
-  @@id([OrderID, SubOrderID], map: "PK__SubOrder__EE115A961430F3F8")
+  @@id([OrderID, SubOrderID], map: "PK__SubOrder__EE115A96D38C81B1")
 }
 
 model UserInfo {
-  LoginName       String            @id(map: "PK__UserInfo__DB8464FEAA579641") @db.VarChar(100)
+  LoginName       String            @id(map: "PK__UserInfo__DB8464FEE3E95229") @db.VarChar(100)
   Password        String            @db.VarChar(255)
   PhoneNumber     String?           @db.Char(10)
   Email           String?           @db.VarChar(255)
-  UserName        String            @unique(map: "UQ__UserInfo__C9F2845665E332D3") @db.VarChar(255)
+  UserName        String            @unique(map: "UQ__UserInfo__C9F284564335D4FA") @db.VarChar(255)
   Gender          Boolean?
   BirthDate       DateTime?         @db.Date
   Age             Int?
@@ -237,13 +238,13 @@ model UserInfo {
 }
 
 model Voucher {
-  VoucherID         Int                @unique(map: "UQ__Voucher__3AEE79C0CD27DF92") @default(autoincrement())
-  Code              String             @id(map: "PK__Voucher__A25C5AA6AA9B879D") @db.VarChar(10)
+  VoucherID         Int                @unique(map: "UQ__Voucher__3AEE79C0BFDEDCE1") @default(autoincrement())
+  Code              String             @id(map: "PK__Voucher__A25C5AA60C1F1C0A") @db.VarChar(10)
   StartedTime       DateTime
   ExpiredTime       DateTime
-  CurrentUsedNumber Int                @default(0, map: "DF__Voucher__Current__73BA3083")
-  MaxUsedNumber     Int                @default(1, map: "DF__Voucher__MaxUsed__74AE54BC")
-  MinMoneyValue     Int                @default(0, map: "DF__Voucher__MinMone__75A278F5")
+  CurrentUsedNumber Int                @default(0, map: "DF__Voucher__Current__72C60C4A")
+  MaxUsedNumber     Int                @default(1, map: "DF__Voucher__MaxUsed__73BA3083")
+  MinMoneyValue     Int                @default(0, map: "DF__Voucher__MinMone__74AE54BC")
   AppliedVoucher    AppliedVoucher[]
   PercentageVoucher PercentageVoucher?
   VoucherOffer      VoucherOffer[]
@@ -253,20 +254,20 @@ model VoucherOffer {
   VoucherCode String      @db.VarChar(10)
   ProductID   Int
   LoginName   String      @db.VarChar(100)
-  UserInfo    UserInfo    @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__VoucherOf__Login__7C4F7684")
-  ProductInfo ProductInfo @relation(fields: [ProductID], references: [ProductID], onUpdate: NoAction, map: "FK__VoucherOf__Produ__7B5B524B")
-  Voucher     Voucher     @relation(fields: [VoucherCode], references: [Code], onDelete: Cascade, map: "FK__VoucherOf__Vouch__7A672E12")
+  UserInfo    UserInfo    @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__VoucherOf__Login__7B5B524B")
+  ProductInfo ProductInfo @relation(fields: [ProductID], references: [ProductID], onUpdate: NoAction, map: "FK__VoucherOf__Produ__7A672E12")
+  Voucher     Voucher     @relation(fields: [VoucherCode], references: [Code], onDelete: Cascade, map: "FK__VoucherOf__Vouch__797309D9")
 
-  @@id([VoucherCode, ProductID], map: "PK__VoucherO__B44A70C602DCDAE2")
+  @@id([VoucherCode, ProductID], map: "PK__VoucherO__B44A70C62E789C04")
 }
 
 model Withdrawal {
-  WithdrawalID     Int      @id(map: "PK__Withdraw__7C842C4E75A839C8") @default(autoincrement())
+  WithdrawalID     Int      @id(map: "PK__Withdraw__7C842C4E3EABB580") @default(autoincrement())
   LoginName        String   @db.VarChar(100)
   WithdrawalAmount Int
   WithdrawalTime   DateTime
-  AccountID        String?  @unique(map: "UQ__Withdraw__349DA5871E8CD4D3") @db.VarChar(30)
-  ProviderName     String   @default("VCB", map: "DF__Withdrawa__Provi__10566F31") @db.VarChar(100)
-  RemainingBalance Int      @default(0, map: "DF__Withdrawa__Remai__123EB7A3")
-  UserInfo         UserInfo @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Withdrawa__Login__0F624AF8")
+  AccountID        String?  @unique(map: "UQ__Withdraw__349DA5875E168D3E") @db.VarChar(30)
+  ProviderName     String   @default("VCB", map: "DF__Withdrawa__Provi__0F624AF8") @db.VarChar(100)
+  RemainingBalance Int      @default(0, map: "DF__Withdrawa__Remai__114A936A")
+  UserInfo         UserInfo @relation(fields: [LoginName], references: [LoginName], onDelete: Cascade, map: "FK__Withdrawa__Login__0E6E26BF")
 }

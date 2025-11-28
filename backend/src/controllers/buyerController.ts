@@ -10,7 +10,11 @@ export const listProducts = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`listProducts error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -24,18 +28,28 @@ export const getProductDetails = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getProductDetails ${id} error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
 export const getAddresses = async (req: Request, res: Response) => {
   try {
-    const addresses = await buyerService.getAddresses((req as any).user.loginName);
+    const addresses = await buyerService.getAddresses(
+      (req as any).user.loginName
+    );
     return res.json(addresses);
   } catch (err) {
     console.error(`getAddresses error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -52,7 +66,11 @@ export const addToCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`addToCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -63,7 +81,11 @@ export const getCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -85,17 +107,27 @@ export const updateCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`updateCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
-
 
 /**
  * Remove the selected Skus from the cart and add it to a new order
  */
 export const proceedCart = async (req: Request, res: Response) => {
   try {
-    const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
+    const {
+      Skus,
+      AddressID,
+      ProviderName,
+      AccountID,
+      DeliveryMethodName,
+      DeliveryProviderName,
+    } = req.body;
 
     if (!Array.isArray(Skus) || Skus.length === 0) {
       throw new Error("Invalid, no skus to proceed Order");
@@ -113,8 +145,8 @@ export const proceedCart = async (req: Request, res: Response) => {
     // Then create order with the selected SKUs (currently, we ignore the quantity in the request vs in the cart)
     const order = await buyerService.createOrder(
       (req as any).user.loginName,
-      Skus, 
-      AddressID, 
+      Skus,
+      AddressID,
       ProviderName,
       DeliveryMethodName,
       DeliveryProviderName,
@@ -122,16 +154,16 @@ export const proceedCart = async (req: Request, res: Response) => {
     );
 
     return res.json(order);
-  } catch(err) {
+  } catch (err) {
     console.error(`Error proceeding Cart to Order ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
     return res.status(parsed.status).json({
       error: parsed.message,
       code: parsed.code,
-      detail: parsed.details
-    })
+      detail: parsed.details,
+    });
   }
-}
+};
 
 export const removeFromCart = async (req: Request, res: Response) => {
   try {
@@ -145,27 +177,11 @@ export const removeFromCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`removeFromCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
-  }
-};
-
-export const createOrder = async (req: Request, res: Response) => {
-  try {
-    const { Skus, AddressID, ProviderName, AccountID, DeliveryMethodName, DeliveryProviderName } = req.body;
-    const order = await buyerService.createOrder(
-      (req as any).user.loginName,
-      Skus,
-      AddressID,
-      ProviderName,
-      DeliveryMethodName,
-      DeliveryProviderName,
-      AccountID
-    );
-    return res.json(order);
-  } catch (err) {
-    console.error(`createOrder error: ${(err as Error).message}`);
-    const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -173,26 +189,93 @@ export const readOrderDetails = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid OrderID" });
   try {
-    const order = await buyerService.readOrderDetails(
-      id
-    );
+    const order = await buyerService.readOrderDetails(id);
     if (!order) return res.status(404).json({ error: "Order not found" });
     return res.json(order);
   } catch (err) {
     console.error(`readOrderDetails ${id} error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
 export const getMoneySpent = async (req: Request, res: Response) => {
   try {
-    const moneySpent = await buyerService.getMoneySpent((req as any).user.loginName);
+    const moneySpent = await buyerService.getMoneySpent(
+      (req as any).user.loginName
+    );
     return res.json({ moneySpent });
   } catch (err) {
     console.error(`getMoneySpent error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
+export const addComment = async (req: Request, res: Response) => {
+  try {
+    const { ProductID, SKUName, Content, Ratings } = req.body;
+    const comment = await buyerService.addComment(
+      (req as any).user.loginName,
+      ProductID,
+      SKUName,
+      Content,
+      Ratings
+    );
+    return res.json(comment);
+  } catch (err) {
+    console.error(`addComment error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
+export const deleteComment = async (req: Request, res: Response) => {
+  try {
+    const { commentID } = req.body;
+    await buyerService.deleteComment((req as any).user.loginName, commentID);
+    return res.json({ message: "Comment deleted" });
+  } catch (err) {
+    console.error(`deleteComment error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
+export const editComment = async (req: Request, res: Response) => {
+  try {
+    const { commentID, content, ratings } = req.body;
+    const comment = await buyerService.editComment(
+      (req as any).user.loginName,
+      commentID,
+      content,
+      ratings
+    );
+    return res.json(comment);
+  } catch (err) {
+    console.error(`editComment error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -205,7 +288,9 @@ export default {
   proceedCart,
   removeFromCart,
   updateCart,
-  createOrder,
   readOrderDetails,
   getMoneySpent,
+  addComment,
+  deleteComment,
+  editComment,
 };

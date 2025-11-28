@@ -1,11 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import Image from "next/image";
-import { Minus, Plus } from "lucide-react";
+import {
+  Star as LucideStar,
+  MoreVertical as LucideMoreVertical,
+  Edit as LucideEdit,
+  Trash2 as LucideTrash2,
+} from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
+import { CartContext } from "../../../../context/CartContext";
+import { AuthContext } from "../../../../context/AuthContext";
+import QuantityCounter from "../../../../components/QuantityCounter";
+
+const Star = LucideStar as any;
+const MoreVertical = LucideMoreVertical as any;
+const Edit = LucideEdit as any;
+const Trash2 = LucideTrash2 as any;
 
 export default function ProductDetailPage({
   params,
@@ -17,58 +30,87 @@ export default function ProductDetailPage({
   const [selectedSku, setSelectedSku] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [newComment, setNewComment] = useState("");
+  const [rating, setRating] = useState(5);
   const [comments, setComments] = useState<any[]>([]);
+  const [openMenuCommentId, setOpenMenuCommentId] = useState<number | null>(
+    null
+  );
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editRating, setEditRating] = useState(5);
+  const cartContext = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuCommentId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     setQuantity(1);
   }, [selectedSku]);
 
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      try {
-        setLoading(true);
-        const resolvedParams = await params;
-        const response = await api.get(
-          API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
-        );
-        const productData = response.data;
-        setProduct(productData);
+  const fetchProductDetails = async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      const resolvedParams = await params;
+      const response = await api.get(
+        API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
+      );
+      const productData = response.data;
+      setProduct(productData);
 
-        // Set first SKU as selected by default
-        if (productData?.SKU?.length > 0) {
+      // Set first SKU as selected by default if not already selected or if selected SKU doesn't exist in new data
+      if (productData?.SKU?.length > 0) {
+        const skuExists = productData.SKU.some(
+          (s: any) => s.SKUName === selectedSku
+        );
+        if (!selectedSku || !skuExists) {
           setSelectedSku(productData.SKU[0].SKUName);
         }
-
-        // Extract comments from SKUs
-        const allComments =
-          productData?.SKU?.flatMap(
-            (sku: any) =>
-              sku.Comment?.map((comment: any) => ({
-                id: comment.CommentID,
-                username: comment.LoginName,
-                comment: comment.Content || "No comment text",
-                rating: comment.Ratings,
-              })) || []
-          ) || [];
-        setComments(allComments);
-      } catch (error) {
-        console.error("Failed to fetch product:", error);
-      } finally {
-        setLoading(false);
       }
-    };
 
+      // Extract comments from SKUs
+      const allComments =
+        productData?.SKU?.flatMap(
+          (sku: any) =>
+            sku.Comment?.map((comment: any) => ({
+              id: comment.CommentID,
+              username: comment.LoginName,
+              comment: comment.Content || "No comment text",
+              rating: comment.Ratings,
+            })) || []
+        ) || [];
+      setComments(allComments);
+    } catch (error) {
+      console.error("Failed to fetch product:", error);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProductDetails();
   }, [params]);
 
   const handleAddToCart = async () => {
     try {
       await api.post(API_PATHS.BUYER.CART.GET, {
-        productID: product.ProductID,
-        skuName: selectedSku,
-        quantity: quantity,
+        ProductID: product.ProductID,
+        SKUName: selectedSku,
+        Quantity: quantity,
       });
       alert(`Added ${quantity} item(s) to cart!`);
+      await cartContext?.fetchCartCount();
       setQuantity(1); // Reset quantity
     } catch (err: any) {
       if (err.response?.status === 400 || err.response?.status === 401) {
@@ -80,12 +122,67 @@ export default function ProductDetailPage({
     }
   };
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComment.trim()) {
-      alert(`Comment submitted: ${newComment}`);
+    if (!newComment.trim()) return;
+
+    try {
+      await api.post(API_PATHS.BUYER.COMMENTS.ADD, {
+        ProductID: product.ProductID,
+        SKUName: selectedSku || null,
+        Content: newComment,
+        Ratings: rating,
+      });
+      alert("Comment submitted successfully!");
       setNewComment("");
+      setRating(5);
+      fetchProductDetails(false);
+    } catch (err: any) {
+      console.error("Failed to submit comment:", err);
+      if (err.response?.status === 401) {
+        alert("Please login to comment.");
+      } else {
+        alert("Failed to submit comment. Please try again.");
+      }
     }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+    try {
+      await api.delete(API_PATHS.BUYER.COMMENTS.DELETE, {
+        data: { commentID: commentId },
+      });
+      alert("Comment deleted successfully");
+      fetchProductDetails(false);
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      alert("Failed to delete comment");
+    }
+  };
+
+  const handleEditComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(API_PATHS.BUYER.COMMENTS.EDIT, {
+        commentID: editingCommentId,
+        content: editContent,
+        ratings: editRating,
+      });
+      alert("Comment updated successfully");
+      setEditingCommentId(null);
+      fetchProductDetails(false);
+    } catch (err) {
+      console.error("Failed to edit comment:", err);
+      alert("Failed to edit comment");
+    }
+  };
+
+  const startEditing = (comment: any) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.comment);
+    setEditRating(comment.rating);
+    setOpenMenuCommentId(null);
   };
 
   const incrementQty = () => {
@@ -98,6 +195,10 @@ export default function ProductDetailPage({
 
   const decrementQty = () => {
     if (quantity > 1) setQuantity(quantity - 1);
+  };
+
+  const handleQuantityChange = (value: number) => {
+    setQuantity(value);
   };
 
   if (loading) {
@@ -124,8 +225,7 @@ export default function ProductDetailPage({
     product.SKU?.find((s: any) => s.SKUName === selectedSku) ||
     product.SKU?.[0];
   const imageUrl =
-    currentSku?.SKUImage?.[0]?.SKU_URL ||
-    "https://via.placeholder.com/600?text=No+Image";
+    currentSku?.SKUImage?.[0]?.SKU_URL || "/images/placeholder.png";
   const price = currentSku?.Price || 0;
   const stock = currentSku?.InStockNumber || 0;
 
@@ -134,13 +234,14 @@ export default function ProductDetailPage({
       {/* Product Info Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Image */}
-        <div className="w-full aspect-square relative rounded-lg overflow-hidden bg-gray-100">
+        <div className="w-full aspect-square relative rounded-lg overflow-hidden bg-white">
+          {/* @ts-ignore */}
           <Image
             src={imageUrl}
             alt={product.ProductName}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
+            className="object-contain"
             priority
           />
         </div>
@@ -180,26 +281,17 @@ export default function ProductDetailPage({
           {/* Quantity Counter */}
           <div className="mb-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center border-2 border-gray-300 rounded-full">
-                <button
-                  onClick={decrementQty}
-                  className="p-3 hover:bg-gray-100 transition rounded-l-full"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="px-6 font-semibold">{quantity}</span>
-                <button
-                  onClick={incrementQty}
-                  className="p-3 hover:bg-gray-100 transition rounded-r-full"
-                  aria-label="Increase quantity"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              <QuantityCounter
+                quantity={quantity}
+                maxStock={stock}
+                onIncrement={incrementQty}
+                onDecrement={decrementQty}
+                onChange={handleQuantityChange}
+                size="medium"
+              />
               <div className="text-sm">
                 <span className="text-orange-500 font-semibold">
-                  Only {stock} Items Left!
+                  Only {stock} {stock > 1 ? "Items" : "Item"} Left!
                 </span>
                 <br />
                 <span className="text-gray-600">Don't miss it</span>
@@ -251,12 +343,36 @@ export default function ProductDetailPage({
 
         {/* Add Comment Form */}
         <form onSubmit={handleSubmitComment} className="mb-8">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rating
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className={`text-2xl ${
+                    star <= rating ? "text-yellow-500" : "text-gray-300"
+                  }`}
+                >
+                  {/* @ts-ignore */}
+                  <Star
+                    className={`w-6 h-6 ${
+                      star <= rating ? "fill-yellow-500" : "fill-transparent"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Share your thoughts about this product..."
-              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand resize-none"
+              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none"
             />
             <div className="flex justify-end mt-3">
               <button
@@ -278,28 +394,122 @@ export default function ProductDetailPage({
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="border-b border-gray-200 pb-6">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-semibold">
-                      {comment.username.charAt(0).toUpperCase()}
+                {editingCommentId === comment.id ? (
+                  <form onSubmit={handleEditComment} className="space-y-4">
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEditRating(star)}
+                          className={`text-xl ${
+                            star <= editRating
+                              ? "text-yellow-500"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              star <= editRating
+                                ? "fill-yellow-500"
+                                : "fill-transparent"
+                            }`}
+                          />
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{comment.username}</span>
-                      {comment.rating && (
-                        <div className="flex text-yellow-500">
-                          {"★".repeat(comment.rating)}
-                          {"☆".repeat(5 - comment.rating)}
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand"
+                      rows={3}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCommentId(null)}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-opacity-90"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex gap-4 items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-semibold">
+                        {comment.username.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            {comment.username}
+                          </span>
+                          {comment.rating && (
+                            <div className="flex gap-1 text-yellow-500">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < comment.rating
+                                      ? "fill-yellow-500"
+                                      : "text-gray-300 fill-transparent"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        {user?.loginName === comment.username && (
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setOpenMenuCommentId(
+                                  openMenuCommentId === comment.id
+                                    ? null
+                                    : comment.id
+                                )
+                              }
+                              className="p-1 hover:bg-gray-100 rounded-full"
+                            >
+                              <MoreVertical className="w-5 h-5 text-gray-500" />
+                            </button>
+                            {openMenuCommentId === comment.id && (
+                              <div
+                                ref={menuRef}
+                                className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-md z-10"
+                              >
+                                <button
+                                  onClick={() => startEditing(comment)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                  <Edit className="w-4 h-4" /> Edit
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteComment(comment.id)
+                                  }
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center gap-2"
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-gray-700">{comment.comment}</p>
                     </div>
-                    <p className="text-gray-700">{comment.comment}</p>
-                    <button className="text-sm text-brand font-semibold hover:underline">
-                      Reply
-                    </button>
                   </div>
-                </div>
+                )}
               </div>
             ))
           )}

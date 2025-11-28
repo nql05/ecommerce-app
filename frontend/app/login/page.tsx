@@ -8,7 +8,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 export default function Login() {
   const searchParams = useSearchParams();
-  const role = searchParams.get("role") || "buyer"; // Default to buyer
+  const role = searchParams.get("role") || "B"; // Default to buyer
   const [loginName, setLoginName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,11 +17,11 @@ export default function Login() {
 
   const getRoleDisplay = () => {
     switch (role) {
-      case "buyer":
+      case "B":
         return "Buyer";
-      case "seller":
+      case "S":
         return "Seller";
-      case "admin":
+      case "A":
         return "Admin";
       default:
         return "User";
@@ -39,8 +39,14 @@ export default function Login() {
       });
       const data = res.data;
       if (data.token) {
-        login(data.token, data.role);
-        router.push("/product");
+        login(data.token, data.role, loginName);
+        if (data.role === "S") {
+          router.push("/seller");
+        } else if (data.role === "A") {
+          router.push("/admin");
+        } else {
+          router.push("/product");
+        }
       } else {
         setError("Invalid credentials");
       }

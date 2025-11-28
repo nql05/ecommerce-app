@@ -43,10 +43,24 @@ router.delete(
 );
 
 router.post(
-  "/order/create",
+  "/comments",
   authenticate,
   authorize(["B", "A"]),
-  buyerController.createOrder
+  buyerController.addComment
+);
+
+router.put(
+  "/comments",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.editComment
+);
+
+router.delete(
+  "/comments",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.deleteComment
 );
 
 router.get(
