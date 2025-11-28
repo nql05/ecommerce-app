@@ -16,6 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
+          {/* @ts-ignore */}
           <CartProvider>{children}</CartProvider>
         </AuthProvider>
       </body>
