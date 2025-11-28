@@ -322,12 +322,12 @@ export default function Cart() {
                       />
 
                       {/* Product Image */}
-                      <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                      <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-white">
                         <Image
                           src={imageUrl}
                           alt={item.SKU.ProductInfo.ProductName}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
                       </div>
 

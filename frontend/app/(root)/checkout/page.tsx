@@ -273,12 +273,12 @@ export default function CheckoutPage() {
                     >
                       {/* Product Info */}
                       <div className="col-span-6 flex gap-3">
-                        <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-white">
                           <Image
                             src={imageUrl}
                             alt={item.SKU.ProductInfo.ProductName}
                             fill
-                            className="object-cover"
+                            className="object-contain"
                           />
                         </div>
                         <div className="flex-1">

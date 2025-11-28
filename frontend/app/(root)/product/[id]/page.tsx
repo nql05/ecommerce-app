@@ -234,14 +234,14 @@ export default function ProductDetailPage({
       {/* Product Info Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Image */}
-        <div className="w-full aspect-square relative rounded-lg overflow-hidden bg-gray-100">
+        <div className="w-full aspect-square relative rounded-lg overflow-hidden bg-white">
           {/* @ts-ignore */}
           <Image
             src={imageUrl}
             alt={product.ProductName}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
+            className="object-contain"
             priority
           />
         </div>
