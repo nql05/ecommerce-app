@@ -3,6 +3,7 @@ export const API_PATHS = {
   AUTH: {
     LOGIN: "/auth/login",
     LOGOUT: "/auth/logout",
+    PROFILE: "/auth/profile",
   },
 
   // Buyer APIs
