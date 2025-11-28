@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../utils/auth";
+import { prismaStorage } from "../mssql/prisma";
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -14,7 +15,11 @@ export const authenticate = (
   if (!token) return res.status(401).json({ error: "Access denied" });
   try {
     req.user = verifyToken(token);
-    next();
+    // Run the next middleware/controller within the AsyncLocalStorage context
+    // This ensures that any usage of 'prisma' downstream uses the client for this role
+    prismaStorage.run({ role: req.user.role }, () => {
+      next();
+    });
   } catch (err) {
     res.status(400).json({ error: "Invalid token" });
   }
