@@ -59,9 +59,9 @@ export default function ProductDetailPage({
     setQuantity(1);
   }, [selectedSku]);
 
-  const fetchProductDetails = async () => {
+  const fetchProductDetails = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const resolvedParams = await params;
       const response = await api.get(
         API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
@@ -94,7 +94,7 @@ export default function ProductDetailPage({
     } catch (error) {
       console.error("Failed to fetch product:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -136,7 +136,7 @@ export default function ProductDetailPage({
       alert("Comment submitted successfully!");
       setNewComment("");
       setRating(5);
-      fetchProductDetails();
+      fetchProductDetails(false);
     } catch (err: any) {
       console.error("Failed to submit comment:", err);
       if (err.response?.status === 401) {
@@ -154,7 +154,7 @@ export default function ProductDetailPage({
         data: { commentID: commentId },
       });
       alert("Comment deleted successfully");
-      fetchProductDetails();
+      fetchProductDetails(false);
     } catch (err) {
       console.error("Failed to delete comment:", err);
       alert("Failed to delete comment");
@@ -171,7 +171,7 @@ export default function ProductDetailPage({
       });
       alert("Comment updated successfully");
       setEditingCommentId(null);
-      fetchProductDetails();
+      fetchProductDetails(false);
     } catch (err) {
       console.error("Failed to edit comment:", err);
       alert("Failed to edit comment");
