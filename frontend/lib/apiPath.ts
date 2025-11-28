@@ -20,6 +20,9 @@ export const API_PATHS = {
       CREATE: "/buyer/cart",
       DETAIL: (orderId: string) => `/buyer/order/${orderId}`,
     },
+    COMMENTS: {
+      ADD: "/buyer/comments",
+    },
   },
 
   // Seller APIs

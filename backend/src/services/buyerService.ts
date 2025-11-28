@@ -337,6 +337,24 @@ const getMoneySpent = async (loginName: string) => {
   return buyer?.MoneySpent || 0;
 };
 
+const addComment = async (
+  loginName: string,
+  productID: number,
+  skuName: string,
+  content: string,
+  ratings: number
+) => {
+  return prisma.comment.create({
+    data: {
+      LoginName: loginName,
+      ProductID: productID,
+      SKUName: skuName,
+      Content: content,
+      Ratings: ratings,
+    },
+  });
+};
+
 export default {
   findMany,
   findUnique,
@@ -348,4 +366,5 @@ export default {
   createOrder,
   readOrderDetails,
   getMoneySpent,
+  addComment,
 };

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useContext } from "react";
 import Image from "next/image";
+import { Star } from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
@@ -18,6 +19,7 @@ export default function ProductDetailPage({
   const [selectedSku, setSelectedSku] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [newComment, setNewComment] = useState("");
+  const [rating, setRating] = useState(5);
   const [comments, setComments] = useState<any[]>([]);
   const cartContext = useContext(CartContext);
 
@@ -25,41 +27,46 @@ export default function ProductDetailPage({
     setQuantity(1);
   }, [selectedSku]);
 
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      try {
-        setLoading(true);
-        const resolvedParams = await params;
-        const response = await api.get(
-          API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
-        );
-        const productData = response.data;
-        setProduct(productData);
+  const fetchProductDetails = async () => {
+    try {
+      setLoading(true);
+      const resolvedParams = await params;
+      const response = await api.get(
+        API_PATHS.BUYER.PRODUCTS.DETAIL(resolvedParams.id)
+      );
+      const productData = response.data;
+      setProduct(productData);
 
-        // Set first SKU as selected by default
-        if (productData?.SKU?.length > 0) {
+      // Set first SKU as selected by default if not already selected or if selected SKU doesn't exist in new data
+      if (productData?.SKU?.length > 0) {
+        const skuExists = productData.SKU.some(
+          (s: any) => s.SKUName === selectedSku
+        );
+        if (!selectedSku || !skuExists) {
           setSelectedSku(productData.SKU[0].SKUName);
         }
-
-        // Extract comments from SKUs
-        const allComments =
-          productData?.SKU?.flatMap(
-            (sku: any) =>
-              sku.Comment?.map((comment: any) => ({
-                id: comment.CommentID,
-                username: comment.LoginName,
-                comment: comment.Content || "No comment text",
-                rating: comment.Ratings,
-              })) || []
-          ) || [];
-        setComments(allComments);
-      } catch (error) {
-        console.error("Failed to fetch product:", error);
-      } finally {
-        setLoading(false);
       }
-    };
 
+      // Extract comments from SKUs
+      const allComments =
+        productData?.SKU?.flatMap(
+          (sku: any) =>
+            sku.Comment?.map((comment: any) => ({
+              id: comment.CommentID,
+              username: comment.LoginName,
+              comment: comment.Content || "No comment text",
+              rating: comment.Ratings,
+            })) || []
+        ) || [];
+      setComments(allComments);
+    } catch (error) {
+      console.error("Failed to fetch product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProductDetails();
   }, [params]);
 
@@ -83,11 +90,28 @@ export default function ProductDetailPage({
     }
   };
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComment.trim()) {
-      alert(`Comment submitted: ${newComment}`);
+    if (!newComment.trim()) return;
+
+    try {
+      await api.post(API_PATHS.BUYER.COMMENTS.ADD, {
+        ProductID: product.ProductID,
+        SKUName: selectedSku || null,
+        Content: newComment,
+        Ratings: rating,
+      });
+      alert("Comment submitted successfully!");
       setNewComment("");
+      setRating(5);
+      fetchProductDetails();
+    } catch (err: any) {
+      console.error("Failed to submit comment:", err);
+      if (err.response?.status === 401) {
+        alert("Please login to comment.");
+      } else {
+        alert("Failed to submit comment. Please try again.");
+      }
     }
   };
 
@@ -249,6 +273,30 @@ export default function ProductDetailPage({
 
         {/* Add Comment Form */}
         <form onSubmit={handleSubmitComment} className="mb-8">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rating
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className={`text-2xl ${
+                    star <= rating ? "text-yellow-500" : "text-gray-300"
+                  }`}
+                >
+                  {/* @ts-ignore */}
+                  <Star
+                    className={`w-6 h-6 ${
+                      star <= rating ? "fill-yellow-500" : "fill-transparent"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <textarea
               value={newComment}
@@ -276,26 +324,32 @@ export default function ProductDetailPage({
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="border-b border-gray-200 pb-6">
-                <div className="flex gap-4">
+                <div className="flex gap-4 items-center">
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-semibold">
                       {comment.username.charAt(0).toUpperCase()}
                     </div>
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{comment.username}</span>
                       {comment.rating && (
-                        <div className="flex text-yellow-500">
-                          {"★".repeat(comment.rating)}
-                          {"☆".repeat(5 - comment.rating)}
+                        <div className="flex gap-1 text-yellow-500">
+                          {[...Array(5)].map((_, i) => (
+                            // @ts-ignore
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < comment.rating
+                                  ? "fill-yellow-500"
+                                  : "text-gray-300 fill-transparent"
+                              }`}
+                            />
+                          ))}
                         </div>
                       )}
                     </div>
                     <p className="text-gray-700">{comment.comment}</p>
-                    <button className="text-sm text-brand font-semibold hover:underline">
-                      Reply
-                    </button>
                   </div>
                 </div>
               </div>

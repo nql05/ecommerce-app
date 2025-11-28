@@ -10,13 +10,11 @@ export const listProducts = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`listProducts error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -30,13 +28,11 @@ export const getProductDetails = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getProductDetails ${id} error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -49,13 +45,11 @@ export const getAddresses = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getAddresses error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -72,13 +66,11 @@ export const addToCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`addToCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -89,13 +81,11 @@ export const getCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -117,13 +107,11 @@ export const updateCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`updateCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -189,13 +177,11 @@ export const removeFromCart = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`removeFromCart error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -209,6 +195,23 @@ export const readOrderDetails = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`readOrderDetails ${id} error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
+export const getMoneySpent = async (req: Request, res: Response) => {
+  try {
+    const moneySpent = await buyerService.getMoneySpent(
+      (req as any).user.loginName
+    );
+    return res.json({ moneySpent });
+  } catch (err) {
+    console.error(`getMoneySpent error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
     return res
       .status(parsed.status)
       .json({
@@ -219,14 +222,25 @@ export const readOrderDetails = async (req: Request, res: Response) => {
   }
 };
 
-export const getMoneySpent = async (req: Request, res: Response) => {
+export const addComment = async (req: Request, res: Response) => {
   try {
-    const moneySpent = await buyerService.getMoneySpent((req as any).user.loginName);
-    return res.json({ moneySpent });
+    const { ProductID, SKUName, Content, Ratings } = req.body;
+    const comment = await buyerService.addComment(
+      (req as any).user.loginName,
+      ProductID,
+      SKUName,
+      Content,
+      Ratings
+    );
+    return res.json(comment);
   } catch (err) {
-    console.error(`getMoneySpent error: ${(err as Error).message}`);
+    console.error(`addComment error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({ error: parsed.message, code: parsed.code, details: parsed.details });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -241,4 +255,5 @@ export default {
   updateCart,
   readOrderDetails,
   getMoneySpent,
+  addComment,
 };

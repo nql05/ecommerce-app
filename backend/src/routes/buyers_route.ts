@@ -42,12 +42,11 @@ router.delete(
   buyerController.removeFromCart
 );
 
-// router.post(
-//   "/order/create",
-//   authenticate,
-//   authorize(["B", "A"]),
-//   buyerController.createOrder
-// );
+router.post(
+  "/comments",
+  authenticate,
+  buyerController.addComment
+);
 
 router.get(
   "/order/:id",
