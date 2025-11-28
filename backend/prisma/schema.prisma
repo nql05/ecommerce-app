@@ -81,7 +81,8 @@ model DeliveryMethod {
 model DeliveryPartner {
   LoginName        String           @db.VarChar(100)
   ProviderName     String           @db.VarChar(100)
-  UserInfo         UserInfo         @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__DeliveryP__Login__09A971A2")
+  
+  Info         UserInfo         @relation(fields: [LoginName], references: [LoginName], onUpdate: NoAction, map: "FK__DeliveryP__Login__09A971A2")
   DeliveryProvider DeliveryProvider @relation(fields: [ProviderName], references: [ProviderName], onUpdate: NoAction, map: "FK__DeliveryP__Provi__0A9D95DB")
 
   @@id([LoginName, ProviderName], map: "PK__Delivery__8C543330B39F1E1F")
@@ -195,7 +196,7 @@ model SubOrderDetail {
   SubOrderInfo SubOrderInfo @relation(fields: [OrderID, SubOrderID], references: [OrderID, SubOrderID], onDelete: Cascade, map: "FK__SubOrderDetail__619B8048")
   SKU          SKU          @relation(fields: [ProductID, SKUName], references: [ProductID, SKUName], onDelete: Cascade, map: "FK__SubOrderDetail__628FA481")
 
-  @@id([SubOrderID, SKUName], map: "PK__SubOrder__30908605BE3C39BB")
+  @@id([SubOrderID, ProductID, SKUName], map: "PK__SubOrder__30908605BE3C39BB")
 }
 
 model SubOrderInfo {

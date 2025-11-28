@@ -83,7 +83,16 @@ const addToCart = async (
   });
 
   if (existingItem) {
-    // Item exists: SET to new quantity (don't increment)
+    const newQuantity = existingItem.Quantity + quantity;
+
+    // Validate against stock
+    if (newQuantity > sku.InStockNumber) {
+      throw new Error(
+        `Insufficient stock. Available: ${sku.InStockNumber}. You already have ${existingItem.Quantity} in cart.`
+      );
+    }
+
+    // Item exists: INCREMENT quantity
     return prisma.storedSKU.update({
       where: {
         ProductID_CartID_SKUName: {
@@ -92,7 +101,7 @@ const addToCart = async (
           SKUName: skuName,
         },
       },
-      data: { Quantity: quantity },
+      data: { Quantity: newQuantity },
     });
   } else {
     // Item doesn't exist: CREATE new
