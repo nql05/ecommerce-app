@@ -45,7 +45,22 @@ router.delete(
 router.post(
   "/comments",
   authenticate,
+  authorize(["B", "A"]),
   buyerController.addComment
+);
+
+router.put(
+  "/comments",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.editComment
+);
+
+router.delete(
+  "/comments",
+  authenticate,
+  authorize(["B", "A"]),
+  buyerController.deleteComment
 );
 
 router.get(

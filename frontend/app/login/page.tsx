@@ -39,8 +39,8 @@ export default function Login() {
       });
       const data = res.data;
       if (data.token) {
-        login(data.token, data.role);
-         if (data.role === "S") {
+        login(data.token, data.role, loginName);
+        if (data.role === "S") {
           router.push("/seller");
         } else {
           router.push("/product");

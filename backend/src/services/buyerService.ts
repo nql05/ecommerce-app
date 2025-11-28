@@ -355,6 +355,51 @@ const addComment = async (
   });
 };
 
+const deleteComment = async (loginName: string, commentID: number) => {
+  const comment = await prisma.comment.findUnique({
+    where: { CommentID: commentID },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  if (comment.LoginName !== loginName) {
+    throw new Error("Unauthorized to delete this comment");
+  }
+
+  return prisma.comment.delete({
+    where: { CommentID: commentID },
+  });
+};
+
+const editComment = async (
+  loginName: string,
+  commentID: number,
+  content: string,
+  ratings: number
+) => {
+  const comment = await prisma.comment.findUnique({
+    where: { CommentID: commentID },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  if (comment.LoginName !== loginName) {
+    throw new Error("Unauthorized to edit this comment");
+  }
+
+  return prisma.comment.update({
+    where: { CommentID: commentID },
+    data: {
+      Content: content,
+      Ratings: ratings,
+    },
+  });
+};
+
 export default {
   findMany,
   findUnique,
@@ -367,4 +412,6 @@ export default {
   readOrderDetails,
   getMoneySpent,
   addComment,
+  deleteComment,
+  editComment,
 };

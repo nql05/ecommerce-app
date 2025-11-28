@@ -22,6 +22,8 @@ export const API_PATHS = {
     },
     COMMENTS: {
       ADD: "/buyer/comments",
+      EDIT: "/buyer/comments",
+      DELETE: "/buyer/comments",
     },
   },
 

@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import Image from "next/image";
-import { Star } from "lucide-react";
+import {
+  Star as LucideStar,
+  MoreVertical as LucideMoreVertical,
+  Edit as LucideEdit,
+  Trash2 as LucideTrash2,
+} from "lucide-react";
 import api from "../../../../lib/api";
 import { API_PATHS } from "../../../../lib/apiPath";
 import formatVND from "../../../../utils/formatVND";
 import { CartContext } from "../../../../context/CartContext";
+import { AuthContext } from "../../../../context/AuthContext";
 import QuantityCounter from "../../../../components/QuantityCounter";
+
+const Star = LucideStar as any;
+const MoreVertical = LucideMoreVertical as any;
+const Edit = LucideEdit as any;
+const Trash2 = LucideTrash2 as any;
 
 export default function ProductDetailPage({
   params,
@@ -21,7 +32,28 @@ export default function ProductDetailPage({
   const [newComment, setNewComment] = useState("");
   const [rating, setRating] = useState(5);
   const [comments, setComments] = useState<any[]>([]);
+  const [openMenuCommentId, setOpenMenuCommentId] = useState<number | null>(
+    null
+  );
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editRating, setEditRating] = useState(5);
   const cartContext = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuCommentId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     setQuantity(1);
@@ -113,6 +145,44 @@ export default function ProductDetailPage({
         alert("Failed to submit comment. Please try again.");
       }
     }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+    try {
+      await api.delete(API_PATHS.BUYER.COMMENTS.DELETE, {
+        data: { commentID: commentId },
+      });
+      alert("Comment deleted successfully");
+      fetchProductDetails();
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      alert("Failed to delete comment");
+    }
+  };
+
+  const handleEditComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(API_PATHS.BUYER.COMMENTS.EDIT, {
+        commentID: editingCommentId,
+        content: editContent,
+        ratings: editRating,
+      });
+      alert("Comment updated successfully");
+      setEditingCommentId(null);
+      fetchProductDetails();
+    } catch (err) {
+      console.error("Failed to edit comment:", err);
+      alert("Failed to edit comment");
+    }
+  };
+
+  const startEditing = (comment: any) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.comment);
+    setEditRating(comment.rating);
+    setOpenMenuCommentId(null);
   };
 
   const incrementQty = () => {
@@ -324,34 +394,122 @@ export default function ProductDetailPage({
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="border-b border-gray-200 pb-6">
-                <div className="flex gap-4 items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-semibold">
-                      {comment.username.charAt(0).toUpperCase()}
+                {editingCommentId === comment.id ? (
+                  <form onSubmit={handleEditComment} className="space-y-4">
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEditRating(star)}
+                          className={`text-xl ${
+                            star <= editRating
+                              ? "text-yellow-500"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              star <= editRating
+                                ? "fill-yellow-500"
+                                : "fill-transparent"
+                            }`}
+                          />
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{comment.username}</span>
-                      {comment.rating && (
-                        <div className="flex gap-1 text-yellow-500">
-                          {[...Array(5)].map((_, i) => (
-                            // @ts-ignore
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < comment.rating
-                                  ? "fill-yellow-500"
-                                  : "text-gray-300 fill-transparent"
-                              }`}
-                            />
-                          ))}
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-brand"
+                      rows={3}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCommentId(null)}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-opacity-90"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex gap-4 items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-semibold">
+                        {comment.username.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            {comment.username}
+                          </span>
+                          {comment.rating && (
+                            <div className="flex gap-1 text-yellow-500">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < comment.rating
+                                      ? "fill-yellow-500"
+                                      : "text-gray-300 fill-transparent"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        {user?.loginName === comment.username && (
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setOpenMenuCommentId(
+                                  openMenuCommentId === comment.id
+                                    ? null
+                                    : comment.id
+                                )
+                              }
+                              className="p-1 hover:bg-gray-100 rounded-full"
+                            >
+                              <MoreVertical className="w-5 h-5 text-gray-500" />
+                            </button>
+                            {openMenuCommentId === comment.id && (
+                              <div
+                                ref={menuRef}
+                                className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-md z-10"
+                              >
+                                <button
+                                  onClick={() => startEditing(comment)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                  <Edit className="w-4 h-4" /> Edit
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteComment(comment.id)
+                                  }
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-600 flex items-center gap-2"
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-gray-700">{comment.comment}</p>
                     </div>
-                    <p className="text-gray-700">{comment.comment}</p>
                   </div>
-                </div>
+                )}
               </div>
             ))
           )}

@@ -212,13 +212,11 @@ export const getMoneySpent = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`getMoneySpent error: ${(err as Error).message}`);
     const parsed = parsePrismaError(err);
-    return res
-      .status(parsed.status)
-      .json({
-        error: parsed.message,
-        code: parsed.code,
-        details: parsed.details,
-      });
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
   }
 };
 
@@ -244,6 +242,43 @@ export const addComment = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteComment = async (req: Request, res: Response) => {
+  try {
+    const { commentID } = req.body;
+    await buyerService.deleteComment((req as any).user.loginName, commentID);
+    return res.json({ message: "Comment deleted" });
+  } catch (err) {
+    console.error(`deleteComment error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
+export const editComment = async (req: Request, res: Response) => {
+  try {
+    const { commentID, content, ratings } = req.body;
+    const comment = await buyerService.editComment(
+      (req as any).user.loginName,
+      commentID,
+      content,
+      ratings
+    );
+    return res.json(comment);
+  } catch (err) {
+    console.error(`editComment error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
 export default {
   listProducts,
   getProductDetails,
@@ -256,4 +291,6 @@ export default {
   readOrderDetails,
   getMoneySpent,
   addComment,
+  deleteComment,
+  editComment,
 };
