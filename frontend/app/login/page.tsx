@@ -42,6 +42,8 @@ export default function Login() {
         login(data.token, data.role, loginName);
         if (data.role === "S") {
           router.push("/seller");
+        } else if (data.role === "A") {
+          router.push("/admin");
         } else {
           router.push("/product");
         }

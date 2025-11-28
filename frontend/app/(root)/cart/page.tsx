@@ -245,7 +245,7 @@ export default function Cart() {
 
   return (
     <main className="pt-32 pb-32">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold mb-8 text-brand">Shopping Cart</h1>
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <p className="text-gray-500">Loading cart...</p>

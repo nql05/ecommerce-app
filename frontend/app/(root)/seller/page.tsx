@@ -354,7 +354,7 @@ export default function SellerDashboard() {
       <div className="w-full px-4">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Seller Dashboard</h1>
+            <h1 className="text-3xl font-bold text-brand">Seller Dashboard</h1>
             <p className="text-gray-600 mt-2">
               Total Earnings:{" "}
               <span className="text-brand font-bold text-xl">

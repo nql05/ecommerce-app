@@ -189,7 +189,7 @@ export default function CheckoutPage() {
   return (
     <main className="pt-32 pb-16">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold mb-8 text-brand">Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Section - Order Items & Payment */}
@@ -202,7 +202,7 @@ export default function CheckoutPage() {
                   {addresses.map((addr) => (
                     <label
                       key={addr.AddressID}
-                      className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition ${
+                      className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition ${
                         selectedAddressID === addr.AddressID
                           ? "border-brand bg-brand/5"
                           : "border-gray-200 hover:border-brand/50"
