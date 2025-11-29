@@ -36,7 +36,7 @@ GO
 -- ======================================================
 INSERT INTO Buyer (LoginName)
 SELECT LoginName FROM UserInfo
-WHERE LoginName NOT IN ('user001', 'user003', 'user005', 'user007', 'user009');
+WHERE LoginName NOT IN ('user001', 'user003', 'user005', 'user007', 'user009', 'admin');
 
 
 -- ======================================================
@@ -45,40 +45,40 @@ WHERE LoginName NOT IN ('user001', 'user003', 'user005', 'user007', 'user009');
 INSERT INTO AddressInfo (LoginName, ContactName, ContactPhoneNumber, City, District, Commune, DetailAddress, AddressType, IsAddressDefault)
 VALUES 
 -- user001 (JohnDoe)
-('user001', 'John Doe', '0901234567', 'Ho Chi Minh City', 'District 1', 'Ward 1', '123 Main St', 'Home', 1),
-('user001', 'John Doe', '0901234567', 'Ho Chi Minh City', 'District 3', 'Ward 5', '456 Business Ave', 'Office', 0),
+('user001', 'John Doe', '0901234567', 'Ho Chi Minh City', 'District 1', 'Ward 1', '123 Main St', 'Home', 'Y'),
+('user001', 'John Doe', '0901234567', 'Ho Chi Minh City', 'District 3', 'Ward 5', '456 Business Ave', 'Office', 'N'),
 
 -- user002 (JaneSmith)
-('user002', 'Jane Smith', '0912345678', 'Ho Chi Minh City', 'District 2', 'Ward 2', '456 Oak Ave', 'Home', 1),
-('user002', 'Jane Smith', '0912345678', 'Ho Chi Minh City', 'District 1', 'Ward 3', '789 Office Blvd', 'Office', 0),
+('user002', 'Jane Smith', '0912345678', 'Ho Chi Minh City', 'District 2', 'Ward 2', '456 Oak Ave', 'Home', 'Y'),
+('user002', 'Jane Smith', '0912345678', 'Ho Chi Minh City', 'District 1', 'Ward 3', '789 Office Blvd', 'Office', 'N'),
 
 -- user003 (MikeWilson)
-('user003', 'Mike Wilson', '0923456789', 'Ho Chi Minh City', 'District 3', 'Ward 4', '789 Pine Rd', 'Home', 1),
+('user003', 'Mike Wilson', '0923456789', 'Ho Chi Minh City', 'District 3', 'Ward 4', '789 Pine Rd', 'Home', 'Y'),
 
 -- user004 (SarahJohnson)
-('user004', 'Sarah Johnson', '0934567890', 'Ho Chi Minh City', 'District 4', 'Ward 5', '321 Elm St', 'Home', 1),
-('user004', 'Sarah Johnson', '0934567890', 'Ho Chi Minh City', 'District 7', 'Ward 8', '111 Work Plaza', 'Office', 0),
+('user004', 'Sarah Johnson', '0934567890', 'Ho Chi Minh City', 'District 4', 'Ward 5', '321 Elm St', 'Home', 'Y'),
+('user004', 'Sarah Johnson', '0934567890', 'Ho Chi Minh City', 'District 7', 'Ward 8', '111 Work Plaza', 'Office', 'N'),
 
 -- user005 (DavidBrown)
-('user005', 'David Brown', '0945678901', 'Ho Chi Minh City', 'District 5', 'Ward 6', '654 Maple Dr', 'Home', 1),
+('user005', 'David Brown', '0945678901', 'Ho Chi Minh City', 'District 5', 'Ward 6', '654 Maple Dr', 'Home', 'Y'),
 
 -- user006 (EmilyDavis)
-('user006', 'Emily Davis', '0956789012', 'Ho Chi Minh City', 'District 6', 'Ward 7', '987 Cedar Ln', 'Home', 1),
-('user006', 'Emily Davis', '0956789012', 'Ho Chi Minh City', 'District 2', 'Ward 4', '222 Corporate St', 'Office', 0),
+('user006', 'Emily Davis', '0956789012', 'Ho Chi Minh City', 'District 6', 'Ward 7', '987 Cedar Ln', 'Home', 'Y'),
+('user006', 'Emily Davis', '0956789012', 'Ho Chi Minh City', 'District 2', 'Ward 4', '222 Corporate St', 'Office', 'N'),
 
 -- user007 (RobertMiller)
-('user007', 'Robert Miller', '0967890123', 'Ho Chi Minh City', 'District 7', 'Ward 9', '147 Birch Blvd', 'Home', 1),
+('user007', 'Robert Miller', '0967890123', 'Ho Chi Minh City', 'District 7', 'Ward 9', '147 Birch Blvd', 'Home', 'Y'),
 
 -- user008 (LisaAnderson)
-('user008', 'Lisa Anderson', '0978901234', 'Ho Chi Minh City', 'District 8', 'Ward 10', '258 Spruce St', 'Home', 1),
-('user008', 'Lisa Anderson', '0978901234', 'Ho Chi Minh City', 'District 5', 'Ward 6', '333 Business Park', 'Office', 0),
+('user008', 'Lisa Anderson', '0978901234', 'Ho Chi Minh City', 'District 8', 'Ward 10', '258 Spruce St', 'Home', 'Y'),
+('user008', 'Lisa Anderson', '0978901234', 'Ho Chi Minh City', 'District 5', 'Ward 6', '333 Business Park', 'Office', 'N'),
 
 -- user009 (JamesTaylor)
-('user009', 'James Taylor', '0989012345', 'Ho Chi Minh City', 'District 9', 'Ward 11', '369 Willow Way', 'Home', 1),
+('user009', 'James Taylor', '0989012345', 'Ho Chi Minh City', 'District 9', 'Ward 11', '369 Willow Way', 'Home', 'Y'),
 
 -- user010 (AmandaWhite)
-('user010', 'Amanda White', '0990123456', 'Ho Chi Minh City', 'District 10', 'Ward 12', '741 Ash Court', 'Home', 1),
-('user010', 'Amanda White', '0990123456', 'Ho Chi Minh City', 'District 1', 'Ward 2', '444 Tech Tower', 'Office', 0);
+('user010', 'Amanda White', '0990123456', 'Ho Chi Minh City', 'District 10', 'Ward 12', '741 Ash Court', 'Home', 'Y'),
+('user010', 'Amanda White', '0990123456', 'Ho Chi Minh City', 'District 1', 'Ward 2', '444 Tech Tower', 'Office', 'N');
 GO
 
 -- ======================================================
@@ -207,36 +207,6 @@ SELECT LoginName FROM Buyer;
 GO
 
 -- ======================================================
--- Table: StoredSKU
--- ======================================================
--- Insert items into StoredSKU (assuming CartID starts from 1)
-INSERT INTO StoredSKU (CartID, ProductID, SKUName, Quantity)
-VALUES 
--- Cart 1 (user002 - JaneSmith)
-(1, 1, '128GB-Black', 1),
-(1, 3, 'Standard-White', 1),
-(1, 10, 'Standard-Black', 1),
-
--- Cart 2 (user004 - SarahJohnson)
-(2, 6, '256GB-Titanium-Gray', 1),
-(2, 7, 'Standard-Black', 1),
-(2, 10, 'Standard-Black', 1),
-
--- Cart 3 (user006 - EmilyDavis)
-(3, 4, '64GB-Purple', 1),
-(3, 3, 'Standard-White', 1),
-
--- Cart 4 (user008 - LisaAnderson)
-(4, 9, '128GB-Beige', 1),
-(4, 10, 'Standard-Gray', 2),
-(4, 6, '512GB-Titanium-Black', 1),
-
--- Cart 5 (user010 - AmandaWhite)
-(5, 8, 'i7-16GB-512GB', 1),
-(5, 7, 'Standard-Silver', 1);
-GO
-
--- ======================================================
 -- Table: DeliveryMethod
 -- ======================================================
 INSERT INTO DeliveryMethod (MethodName) VALUES ('Standard'), ('Express'), ('Economy');
@@ -317,4 +287,34 @@ VALUES
 
 -- user005 offers VCH-000005 on Xiaomi 14 Pro (ProductID=11)
 ('VCH-000005', 11, 'user005');
+GO
+
+-- ======================================================
+-- Table: StoredSKU
+-- ======================================================
+-- Insert items into StoredSKU (assuming CartID starts from 1)
+INSERT INTO StoredSKU (CartID, ProductID, SKUName, Quantity)
+VALUES 
+-- Cart 1 (user002 - JaneSmith)
+(1, 1, '128GB-Black', 1),
+(1, 3, 'Standard-White', 1),
+(1, 10, 'Standard-Black', 1),
+
+-- Cart 2 (user004 - SarahJohnson)
+(2, 6, '256GB-Titanium-Gray', 1),
+(2, 7, 'Standard-Black', 1),
+(2, 10, 'Standard-Black', 1),
+
+-- Cart 3 (user006 - EmilyDavis)
+(3, 4, '64GB-Purple', 1),
+(3, 3, 'Standard-White', 1),
+
+-- Cart 4 (user008 - LisaAnderson)
+(4, 9, '128GB-Beige', 1),
+(4, 10, 'Standard-Gray', 2),
+(4, 6, '512GB-Titanium-Black', 1),
+
+-- Cart 5 (user010 - AmandaWhite)
+(5, 8, 'i7-16GB-512GB', 1),
+(5, 7, 'Standard-Silver', 1);
 GO
