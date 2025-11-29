@@ -47,6 +47,7 @@ const addToCart = async (
   });
 };
 
+
 const getCart = async (loginName: string) => {
   return prisma.cart.findFirst({
     where: { LoginName: loginName },
