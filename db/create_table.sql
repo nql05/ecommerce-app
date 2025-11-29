@@ -1,23 +1,32 @@
 USE master;
 GO
 
+-- Drop and recreate the 'MyDatabase' database
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'Ecommerce')
+BEGIN
+    ALTER DATABASE Ecommerce SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE Ecommerce;
+END;
+GO
+
+-- Create the 'Ecommerce' database
 CREATE DATABASE Ecommerce;
 GO
 
-Use Ecommerce;
+USE Ecommerce;
 GO
 
--- 1. Create table
-
-CREATE TABLE UserInfo (
+-- ======================================================
+-- Table: UserInfo
+-- ======================================================
+CREATE TABLE UserInfo ( 
 	LoginName VARCHAR(100),
 	Password VARCHAR(255) NOT NULL,
-	-- PhoneNumber and Email Should not be unique because they could be NULL
 	PhoneNumber CHAR(10),
 	Email VARCHAR(255),
 	UserName VARCHAR(255) NOT NULL UNIQUE,
-	Gender BIT, -- Bit in SQL Server = Boolean in other DBMS
-	BirthDate DATE, --- Format: YYYY-MM-DD
+	Gender CHAR(1) CHECK (Gender IN ('M', 'F')), 
+	BirthDate DATE, 
 	Age AS (DATEDIFF(YEAR, BirthDate, GETDATE())),
 	Address VARCHAR(500),
 	-- Constraints
@@ -34,54 +43,76 @@ CREATE TABLE UserInfo (
     ),
 	CONSTRAINT contact_method CHECK (
 		PhoneNumber IS NOT NULL or Email IS NOT NULL
+	),
+	CONSTRAINT phonenumber_format CHECK (
+		PhoneNumber IS NULL
+		OR (DATALENGTH(PhoneNumber) = 10 AND PhoneNumber NOT LIKE '%[^0-9]%')
 	)
 );
 GO
 
+
+-- ======================================================
+-- Table: Buyer
+-- ======================================================
 CREATE TABLE Buyer (
 	LoginName VARCHAR(100) PRIMARY KEY,
-	MoneySpent INT NOT NULL DEFAULT 0 CHECK (MoneySpent >= 0),
+	MoneySpent BIGINT NOT NULL DEFAULT 0 CHECK (MoneySpent >= 0),
 	-- Constraint
 	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE 
 );
 GO
 
+
+-- ======================================================
+-- Table: Seller
+-- ======================================================
 CREATE TABLE Seller (
 	LoginName VARCHAR(100) PRIMARY KEY,
 	ShopName VARCHAR(100) NOT NULL UNIQUE,
-	CitizenIDCard VARCHAR(30) NOT NULL UNIQUE,
+	CitizenIDCard VARCHAR(30) NOT NULL UNIQUE CHECK (CitizenIDCard NOT LIKE '%[^0-9]%'),
 	SellerName VARCHAR(50) NOT NULL UNIQUE,
-	MoneyEarned INT NOT NULL DEFAULT 0,
+	MoneyEarned BIGINT NOT NULL DEFAULT 0 CHECK (MoneyEarned >= 0),
 	-- Constraint
-	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 
+-- ======================================================
+-- Table: AddressInfo
+-- ======================================================
 CREATE TABLE AddressInfo (
 	LoginName VARCHAR(100),
 	AddressID INT IDENTITY(1,1),
 	ContactName VARCHAR(255) NOT NULL,
-	ContactPhoneNumber CHAR(10) NOT NULL, -- PhoneNumber contains 10 digits
+	ContactPhoneNumber CHAR(10) NOT NULL CHECK(DATALENGTH(ContactPhoneNumber) = 10 AND ContactPhoneNumber NOT LIKE '[^0-9]%'), -- PhoneNumber contains 10 digits
 	City VARCHAR(100) NOT NULL,
     District VARCHAR(100) NOT NULL,
     Commune VARCHAR(100) NOT NULL,
     DetailAddress VARCHAR(500) NOT NULL,
     AddressType VARCHAR(50) NOT NULL DEFAULT 'Home' CHECK (AddressType IN ('Home', 'Office')), -- Home or Office
-    IsAddressDefault BIT NOT NULL DEFAULT 0, -- 0 = True, 1 = False
+    IsAddressDefault CHAR(1) NOT NULL DEFAULT 'Y' CHECK (IsAddressDefault IN ('Y', 'N')), -- 0 = True, 1 = False
 	-- Constraints
 	PRIMARY KEY(LoginName, AddressID),
 	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE,
 );
 GO
 
+CREATE UNIQUE NONCLUSTERED INDEX idx_UniqueDefaultAddress
+ON AddressInfo(LoginName)
+WHERE IsAddressDefault = 'Y';
+
+-- ======================================================
+-- Table: OrderInfo
+-- ======================================================
 CREATE TABLE OrderInfo (
 	OrderID INT IDENTITY(1,1),
 	LoginName VARCHAR(100) NOT NULL,
 	OrderDate DATETIME2 NOT NULL DEFAULT GETDATE(),
-	TotalPrice INT NOT NULL DEFAULT 0, -- we need to create a trigger from sub order 
+	TotalPrice BIGINT NOT NULL DEFAULT 0 CHECK (TotalPrice >= 0), -- we need to create a trigger from sub order 
 	-- Component of Payment Method
-	ProviderName VARCHAR(100) NOT NULL DEFAULT 'VCB' CHECK(ProviderName IN ('VCB', 'OCB', 'MoMo', 'ZaloPay')),
-	AccountID VARCHAR(30) UNIQUE,
+	BankProviderName VARCHAR(10) NOT NULL DEFAULT 'VCB' CHECK(BankProviderName IN ('VCB', 'OCB', 'MoMo', 'ZaloPay')),
+	AccountID VARCHAR(30) CHECK (AccountID NOT LIKE '[^0-9]%'),
 	AddressID INT NOT NULL,
 	--Constraint
 	PRIMARY KEY (OrderID),
@@ -89,11 +120,14 @@ CREATE TABLE OrderInfo (
 );
 GO
 
+-- ======================================================
+-- Table: SubOrderInfo
+-- ======================================================
 CREATE TABLE SubOrderInfo (
 	OrderID INT,
 	SubOrderID INT IDENTITY(1,1),
-	TotalSKUPrice INT NOT NULL DEFAULT 0,
-	ShippingStatus VARCHAR(50) NOT NULL DEFAULT 'Preparing' CHECK (ShippingStatus IN ('Preparing', 'Shipping', 'Done', 'Cancelled')),
+	TotalSKUPrice BIGINT NOT NULL DEFAULT 0,
+	ShippingStatus VARCHAR(20) NOT NULL DEFAULT 'Preparing' CHECK (ShippingStatus IN ('Preparing', 'Shipping', 'Done', 'Cancelled')),
 	ActualDate DATETIME2 NOT NULL,
 	ExpectedDate DATETIME2 NOT NULL,
 	DeliveryMethodName VARCHAR(100) NOT NULL,
@@ -106,6 +140,7 @@ CREATE TABLE SubOrderInfo (
 );
 GO
 
+-- HARD CODE IN FRONT END
 CREATE TABLE DeliveryMethod (
 	MethodName VARCHAR(100) PRIMARY KEY
 );
@@ -122,10 +157,13 @@ GO
 ALTER TABLE SubOrderInfo ADD FOREIGN KEY (DeliveryProviderName) REFERENCES DeliveryProvider(ProviderName) ON DELETE CASCADE ON UPDATE CASCADE;
 GO
 
+-- ======================================================
+-- Table: Cart
+-- ======================================================
 CREATE TABLE Cart (
 	CartID INT IDENTITY(1,1) PRIMARY KEY,
 	LoginName VARCHAR(100) NOT NULL,
-	TotalCost INT NOT NULL DEFAULT 0,
+	TotalCost BIGINT NOT NULL DEFAULT 0,
 	-- Constraint
 	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE 
 );
@@ -139,6 +177,9 @@ CREATE TABLE ProvideDelivery (
 );
 GO
 
+-- ======================================================
+-- Table: ProductInfo
+-- ======================================================
 CREATE TABLE ProductInfo (
 	ProductID INT IDENTITY(1,1) PRIMARY KEY,
 	LoginName VARCHAR(100) NOT NULL,
@@ -152,12 +193,15 @@ CREATE TABLE ProductInfo (
 );
 GO
 
+-- ======================================================
+-- Table: SKU
+-- ======================================================
 CREATE TABLE SKU (
 	ProductID INT,
 	SKUName VARCHAR(100),
 	Size INT,
 	Price INT NOT NULL,
-	InStockNumber INT NOT NULL, -- available amount of product in the shop -> use trigger for this
+	InStockNumber INT NOT NULL DEFAULT 0, -- available amount of product in the shop -> use trigger for this
 	Weight INT,
 	-- Constraints
 	PRIMARY KEY (ProductID, SKUName),
@@ -165,6 +209,9 @@ CREATE TABLE SKU (
 );
 GO
 
+-- ======================================================
+-- Table: StoredSKU
+-- ======================================================
 CREATE TABLE StoredSKU (
 	CartID INT,
 	ProductID INT,
@@ -177,6 +224,9 @@ CREATE TABLE StoredSKU (
 );	
 GO
 
+-- ======================================================
+-- Table: SubOrderDetail
+-- ======================================================
 CREATE TABLE SubOrderDetail (
 	OrderID INT NOT NULL,
 	SubOrderID INT,
@@ -200,6 +250,9 @@ CREATE TABLE SKUImage (
 );
 GO
 
+-- ======================================================
+-- Table: Comment
+-- ======================================================
 CREATE TABLE Comment (
 	CommentID INT IDENTITY(1,1),
 	LoginName VARCHAR(100) NOT NULL,
@@ -228,6 +281,9 @@ CREATE TABLE CommentImage (
 );
 GO
 
+-- ======================================================
+-- Table: Voucher
+-- ======================================================
 CREATE TABLE Voucher (
 	VoucherID INT IDENTITY(1,1) NOT NULL UNIQUE,
 	Code AS ('VCH-' + RIGHT('000000' + CAST(VoucherId AS VARCHAR(10)), 6)) PERSISTED PRIMARY KEY, -- persisted = saved to disk + indexable
@@ -300,62 +356,3 @@ CREATE TABLE Withdrawal (
 	RemainingBalance INT NOT NULL DEFAULT 0 CHECK (RemainingBalance >= 0)
 );
 GO
-
-
--- 2. Create Trigger
--- 2.1 Trigger that generate derived column values
---- TRIGGER TO AUTO CALCULATE TOTAL COST IN Cart AFTER WE INSERT, UPDATE OR DELETE STORED SKU (Modify Quantity)
-CREATE TRIGGER calculateCartTotalCost ON StoredSKU AFTER INSERT, UPDATE, DELETE
-AS BEGIN
-
-	DECLARE @ModifiedCart TABLE (CartID INT PRIMARY KEY);
-
-	INSERT INTO @ModifiedCart (CartID)
-	SELECT CartID FROM inserted
-	UNION
-	SELECT CartID FROM deleted;
-
-	UPDATE Cart
-	SET TotalCost = (
-		SELECT SUM(StoredSKU.Quantity * SKU.Price)
-		FROM StoredSKU
-		JOIN SKU ON StoredSKU.ProductID = SKU.ProductID AND StoredSKU.SKUName = SKU.SKUName
-		WHERE StoredSKU.CartID IN (SELECT CartID FROM @ModifiedCart)
-	)
-END
-GO
-
--- TRIGER TO AUTO CALCULATE AFTER WE MODIFY PRICE OF SKU
-CREATE TRIGGER UpdateCartTotalCost ON SKU AFTER UPDATE
-AS
-BEGIN
-	IF UPDATE(Price) AND EXISTS(
-		SELECT 1 FROM inserted AS i 
-		JOIN deleted AS d ON  i.ProductID = d.ProductID AND i.SKUName = d.SKUName
-		WHERE i.Price != d.Price
-	)
-
-	BEGIN
-        DECLARE @AffectedCarts TABLE (CartID INT PRIMARY KEY);
-
-        INSERT INTO @AffectedCarts (CartID)
-        SELECT DISTINCT S.CartID
-        FROM StoredSKU AS S
-        JOIN inserted AS i ON S.ProductID = i.ProductID AND S.SKUName = i.SKUName;
-
-        UPDATE Cart
-        SET TotalCost = (
-            SELECT SUM(StoredSKU.Quantity * SKU.Price)
-            FROM StoredSKU
-            JOIN SKU ON StoredSKU.ProductID = SKU.ProductID AND StoredSKU.SKUName = SKU.SKUName
-            WHERE StoredSKU.CartID = Cart.CartID
-        )
-        WHERE Cart.CartID IN (SELECT CartID FROM @AffectedCarts);
-		END
-END
-GO
-
-
-
--- 2.2 Trigger that enforce business rules that are meaningful. for example, constraints ...
--- 3. Create Function / Procedure
