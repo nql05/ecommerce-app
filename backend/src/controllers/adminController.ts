@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import adminService from "../services/adminService";
 
 export const listSellers = async (req: Request, res: Response) => {
-  const users = await adminService.listSellers();
+  const users: any = await adminService.listSellers();
 
   // Get Seller only
   const sellers = users.filter((user: any) => {
@@ -13,7 +13,7 @@ export const listSellers = async (req: Request, res: Response) => {
 };
 
 export const listBuyers = async (req: Request, res: Response) => {
-  const users = await adminService.listBuyers();
+  const users: any = await adminService.listBuyers();
 
   // Get Buyer only
   const buyers = users.filter((user: any) => {
