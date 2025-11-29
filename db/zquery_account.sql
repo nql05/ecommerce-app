@@ -1,6 +1,6 @@
 SELECT *
 FROM UserInfo u
-INNER JOIN Buyer b
+INNER JOIN Seller b
     ON u.LoginName = b.LoginName;
 
 -- SELECT * FROM UserInfo;

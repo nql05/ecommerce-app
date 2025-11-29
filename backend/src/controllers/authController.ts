@@ -26,12 +26,13 @@ export const login = async (req: Request, res: Response) => {
     if (!passwordMatches)
       return res.status(400).json({ error: "Invalid credentials" });
 
-    // Determine role from relations
-    const actualRole = (user as any).Buyer
-      ? "B"
-      : (user as any).Seller
-      ? "S"
-      : "A";
+    // Determine role from relations (raw SQL returns flat structure with LEFT JOIN)
+    const actualRole =
+      (user as any).MoneySpent !== null
+        ? "B"
+        : (user as any).ShopName !== null || (user as any).SellerName !== null
+        ? "S"
+        : "A";
     if (role !== actualRole)
       return res.status(403).json({ error: "Unauthorized role" });
 

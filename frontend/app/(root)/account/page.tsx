@@ -33,14 +33,10 @@ interface UserProfile {
   BirthDate: string | null;
   Age: number | null;
   Address: string | null;
-  Buyer?: {
-    MoneySpent: number;
-  };
-  Seller?: {
-    ShopName: string;
-    SellerName: string;
-    MoneyEarned: number;
-  };
+  MoneySpent?: number | null;
+  ShopName?: string | null;
+  SellerName?: string | null;
+  MoneyEarned?: number | null;
 }
 
 export default function AccountPage() {
@@ -207,7 +203,7 @@ export default function AccountPage() {
           </div>
 
           {/* Buyer Stats */}
-          {profile.Buyer && (
+          {profile.MoneySpent !== null && profile.MoneySpent !== undefined && (
             <div className="bg-white border border-gray-200 rounded-lg p-8">
               <h2 className="text-2xl font-bold mb-6">Buyer Statistics</h2>
               <div className="flex items-center gap-4">
@@ -215,7 +211,7 @@ export default function AccountPage() {
                 <div>
                   <p className="text-sm text-gray-500">Total Money Spent</p>
                   <p className="font-bold text-brand text-2xl">
-                    {formatVND(profile.Buyer.MoneySpent)}
+                    {formatVND(profile.MoneySpent)}
                   </p>
                 </div>
               </div>
@@ -223,7 +219,7 @@ export default function AccountPage() {
           )}
 
           {/* Seller Stats */}
-          {profile.Seller && (
+          {profile.ShopName && (
             <div className="bg-white border border-gray-200 rounded-lg p-8">
               <h2 className="text-2xl font-bold mb-6">Seller Information</h2>
               <div className="space-y-4">
@@ -231,16 +227,14 @@ export default function AccountPage() {
                   <Store className="w-5 h-5 text-purple-600" />
                   <div>
                     <p className="text-sm text-gray-500">Shop Name</p>
-                    <p className="font-semibold">
-                      {profile.Seller.ShopName}
-                    </p>
+                    <p className="font-semibold">{profile.ShopName}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <User className="w-5 h-5 text-purple-600" />
                   <div>
                     <p className="text-sm text-gray-500">Seller Name</p>
-                    <p className="font-semibold">{profile.Seller.SellerName}</p>
+                    <p className="font-semibold">{profile.SellerName}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -248,7 +242,7 @@ export default function AccountPage() {
                   <div>
                     <p className="text-sm text-gray-500">Total Earnings</p>
                     <p className="font-bold text-brand text-2xl">
-                      {formatVND(profile.Seller.MoneyEarned)}
+                      {formatVND(profile.MoneyEarned || 0)}
                     </p>
                   </div>
                 </div>

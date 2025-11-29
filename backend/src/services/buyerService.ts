@@ -1,12 +1,40 @@
 import prisma from "../mssql/prisma";
 import { Prisma } from "@prisma/client";
 
+// Helper to safely parse JSON that might already be an object or null
+const safeJsonParse = (value: any) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return value; // Already an object
+};
+
+// Helper to convert BigInt to number recursively
+const convertBigIntToNumber = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "bigint") return Number(obj);
+  if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+  if (typeof obj === "object") {
+    const converted: any = {};
+    for (const key in obj) {
+      converted[key] = convertBigIntToNumber(obj[key]);
+    }
+    return converted;
+  }
+  return obj;
+};
+
 const findMany = async (search?: string) => {
   const whereClause = search
     ? Prisma.sql`WHERE p.ProductName LIKE ${"%" + search + "%"}`
     : Prisma.sql``;
 
-  return prisma.$queryRaw`
+  const results: any[] = await prisma.$queryRaw`
     SELECT 
       p.*,
       (
@@ -20,6 +48,21 @@ const findMany = async (search?: string) => {
     FROM ProductInfo p
     ${whereClause}
   `;
+
+  // Parse JSON strings to objects
+  return results.map((product: any) => {
+    const skuData = safeJsonParse(product.SKU);
+    return convertBigIntToNumber({
+      ...product,
+      SKU: skuData
+        ? (Array.isArray(skuData) ? skuData : [skuData]).map((sku: any) => ({
+            ...sku,
+            Comment: safeJsonParse(sku.Comment) || [],
+            SKUImage: safeJsonParse(sku.SKUImage) || [],
+          }))
+        : [],
+    });
+  });
 };
 
 const findUnique = async (id: number) => {
@@ -37,13 +80,28 @@ const findUnique = async (id: number) => {
     FROM ProductInfo p
     WHERE p.ProductID = ${id}
   `;
-  return result[0] || null;
+
+  if (!result[0]) return null;
+
+  const product = result[0];
+  const skuData = safeJsonParse(product.SKU);
+  return convertBigIntToNumber({
+    ...product,
+    SKU: skuData
+      ? (Array.isArray(skuData) ? skuData : [skuData]).map((sku: any) => ({
+          ...sku,
+          Comment: safeJsonParse(sku.Comment) || [],
+          SKUImage: safeJsonParse(sku.SKUImage) || [],
+        }))
+      : [],
+  });
 };
 
 const getAddresses = async (loginName: string) => {
-  return prisma.$queryRaw`
+  const results = await prisma.$queryRaw`
     SELECT * FROM AddressInfo WHERE LoginName = ${loginName}
   `;
+  return convertBigIntToNumber(results);
 };
 
 const addToCart = async (
@@ -53,51 +111,93 @@ const addToCart = async (
   quantity: number
 ) => {
   const result: any[] = await prisma.$queryRaw`
-    WITH CartInfo AS (
-      SELECT CartID FROM Cart WHERE LoginName = ${loginName}
-    ),
-    SkuInfo AS (
-      SELECT Price, InStockNumber FROM SKU WHERE ProductID = ${productID} AND SKUName = ${skuName}
-    ),
-    ExistingItem AS (
-      SELECT Quantity FROM StoredSKU 
-      WHERE ProductID = ${productID} AND CartID = (SELECT CartID FROM CartInfo) AND SKUName = ${skuName}
-    ),
-    Validation AS (
-      SELECT 
-        CASE 
-          WHEN NOT EXISTS (SELECT 1 FROM CartInfo) THEN 'Cart not found'
-          WHEN NOT EXISTS (SELECT 1 FROM SkuInfo) THEN 'SKU not found: ProductID=' + CAST(${productID} AS VARCHAR) + ', SKUName=' + ${skuName}
-          WHEN ${quantity} > FLOOR(2147483647.0 / (SELECT Price FROM SkuInfo)) THEN 'Quantity too large. Maximum allowed: ' + CAST(FLOOR(2147483647.0 / (SELECT Price FROM SkuInfo)) AS VARCHAR)
-          WHEN ${quantity} > (SELECT InStockNumber FROM SkuInfo) THEN 'Insufficient stock. Available: ' + CAST((SELECT InStockNumber FROM SkuInfo) AS VARCHAR)
-          WHEN EXISTS (SELECT 1 FROM ExistingItem) AND ((SELECT Quantity FROM ExistingItem) + ${quantity}) > (SELECT InStockNumber FROM SkuInfo) THEN 'Insufficient stock. Available: ' + CAST((SELECT InStockNumber FROM SkuInfo) AS VARCHAR) + '. You already have ' + CAST((SELECT Quantity FROM ExistingItem) AS VARCHAR) + ' in cart.'
-          ELSE NULL
-        END AS ErrorMessage
-    )
-    SELECT * FROM Validation WHERE ErrorMessage IS NOT NULL
-    UNION ALL
-    SELECT NULL AS ErrorMessage FROM Validation WHERE ErrorMessage IS NULL
-      AND EXISTS(
-        UPDATE StoredSKU 
-        SET Quantity = Quantity + ${quantity}
-        OUTPUT 'UPDATED' AS Action, INSERTED.*
-        WHERE ProductID = ${productID} AND CartID = (SELECT CartID FROM CartInfo) AND SKUName = ${skuName}
-      )
-    UNION ALL
-    SELECT NULL AS ErrorMessage FROM Validation WHERE ErrorMessage IS NULL
-      AND NOT EXISTS (SELECT 1 FROM ExistingItem)
-      AND EXISTS(
-        INSERT INTO StoredSKU (CartID, ProductID, SKUName, Quantity)
-        OUTPUT 'INSERTED' AS Action, INSERTED.*
-        SELECT (SELECT CartID FROM CartInfo), ${productID}, ${skuName}, ${quantity}
-      )
+    DECLARE @CartID INT;
+    DECLARE @Price INT;
+    DECLARE @InStockNumber INT;
+    DECLARE @ExistingQty INT;
+    DECLARE @ErrorMessage NVARCHAR(MAX) = NULL;
+
+    -- Get Cart ID
+    SELECT @CartID = CartID FROM Cart WHERE LoginName = ${loginName};
+    
+    IF @CartID IS NULL
+    BEGIN
+      SET @ErrorMessage = 'Cart not found';
+      SELECT @ErrorMessage AS ErrorMessage;
+      RETURN;
+    END
+
+    -- Get SKU Info
+    SELECT @Price = Price, @InStockNumber = InStockNumber 
+    FROM SKU 
+    WHERE ProductID = ${productID} AND SKUName = ${skuName};
+    
+    IF @Price IS NULL
+    BEGIN
+      SET @ErrorMessage = 'SKU not found: ProductID=' + CAST(${productID} AS VARCHAR) + ', SKUName=' + ${skuName};
+      SELECT @ErrorMessage AS ErrorMessage;
+      RETURN;
+    END
+
+    -- Validate quantity limits
+    IF ${quantity} > FLOOR(2147483647.0 / @Price)
+    BEGIN
+      SET @ErrorMessage = 'Quantity too large. Maximum allowed: ' + CAST(FLOOR(2147483647.0 / @Price) AS VARCHAR);
+      SELECT @ErrorMessage AS ErrorMessage;
+      RETURN;
+    END
+
+    IF ${quantity} > @InStockNumber
+    BEGIN
+      SET @ErrorMessage = 'Insufficient stock. Available: ' + CAST(@InStockNumber AS VARCHAR);
+      SELECT @ErrorMessage AS ErrorMessage;
+      RETURN;
+    END
+
+    -- Check if item already exists in cart
+    SELECT @ExistingQty = Quantity 
+    FROM StoredSKU 
+    WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+
+    IF @ExistingQty IS NOT NULL
+    BEGIN
+      -- Check if adding quantity exceeds stock
+      IF (@ExistingQty + ${quantity}) > @InStockNumber
+      BEGIN
+        SET @ErrorMessage = 'Insufficient stock. Available: ' + CAST(@InStockNumber AS VARCHAR) + 
+                           '. You already have ' + CAST(@ExistingQty AS VARCHAR) + ' in cart.';
+        SELECT @ErrorMessage AS ErrorMessage;
+        RETURN;
+      END
+
+      -- Update existing item
+      UPDATE StoredSKU 
+      SET Quantity = Quantity + ${quantity}
+      WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+      
+      -- Return updated row
+      SELECT NULL AS ErrorMessage, 'UPDATED' AS Action, CartID, ProductID, SKUName, Quantity
+      FROM StoredSKU
+      WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+    END
+    ELSE
+    BEGIN
+      -- Insert new item
+      INSERT INTO StoredSKU (CartID, ProductID, SKUName, Quantity)
+      VALUES (@CartID, ${productID}, ${skuName}, ${quantity});
+      
+      -- Return inserted row
+      SELECT NULL AS ErrorMessage, 'INSERTED' AS Action, CartID, ProductID, SKUName, Quantity
+      FROM StoredSKU
+      WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+    END
   `;
 
   if (result[0]?.ErrorMessage) {
     throw new Error(result[0].ErrorMessage);
   }
 
-  return result[0];
+  return convertBigIntToNumber(result[0]);
 };
 
 const getCart = async (loginName: string) => {
@@ -123,7 +223,31 @@ const getCart = async (loginName: string) => {
     FROM Cart c
     WHERE c.LoginName = ${loginName}
   `;
-  return result[0] || null;
+
+  if (!result[0]) return null;
+
+  const cart = result[0];
+  const storedSkuData = safeJsonParse(cart.StoredSKU);
+  return convertBigIntToNumber({
+    ...cart,
+    StoredSKU: storedSkuData
+      ? (Array.isArray(storedSkuData) ? storedSkuData : [storedSkuData]).map(
+          (stored: any) => {
+            const skuData = safeJsonParse(stored.SKU);
+            return {
+              ...stored,
+              SKU: skuData
+                ? {
+                    ...skuData,
+                    ProductInfo: safeJsonParse(skuData.ProductInfo),
+                    SKUImage: safeJsonParse(skuData.SKUImage) || [],
+                  }
+                : null,
+            };
+          }
+        )
+      : [],
+  });
 };
 
 const removeFromCart = async (
@@ -132,22 +256,48 @@ const removeFromCart = async (
   skuName: string
 ) => {
   const result: any[] = await prisma.$queryRaw`
-    WITH CartInfo AS (
-      SELECT CartID FROM Cart WHERE LoginName = ${loginName}
+    DECLARE @CartID INT;
+    
+    -- Get Cart ID
+    SELECT @CartID = CartID FROM Cart WHERE LoginName = ${loginName};
+    
+    IF @CartID IS NULL
+    BEGIN
+      SELECT NULL AS CartID; -- Return empty to indicate cart not found
+      RETURN;
+    END
+    
+    -- Check if item exists before deleting
+    IF NOT EXISTS (
+      SELECT 1 FROM StoredSKU 
+      WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName}
     )
+    BEGIN
+      SELECT NULL AS CartID; -- Return empty to indicate item not found
+      RETURN;
+    END
+    
+    -- Store the item before deleting
+    SELECT CartID, ProductID, SKUName, Quantity
+    INTO #DeletedItem
+    FROM StoredSKU
+    WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+    
+    -- Delete the item
     DELETE FROM StoredSKU
-    OUTPUT DELETED.*
-    WHERE ProductID = ${productID} 
-      AND CartID = (SELECT CartID FROM CartInfo) 
-      AND SKUName = ${skuName}
-      AND EXISTS (SELECT 1 FROM CartInfo)
+    WHERE ProductID = ${productID} AND CartID = @CartID AND SKUName = ${skuName};
+    
+    -- Return the deleted item
+    SELECT * FROM #DeletedItem;
+    
+    DROP TABLE #DeletedItem;
   `;
 
-  if (result.length === 0) {
+  if (result.length === 0 || result[0]?.CartID === null) {
     throw new Error("Cart not found or item not in cart");
   }
 
-  return result[0];
+  return convertBigIntToNumber(result[0]);
 };
 
 const createOrder = async (
@@ -205,7 +355,7 @@ const createOrder = async (
       SELECT @TotalPrice = SUM(ItemTotal) FROM #SkuDetails;
       
       -- Create Order
-      INSERT INTO OrderInfo (LoginName, AddressID, ProviderName, AccountID, TotalPrice)
+      INSERT INTO OrderInfo (LoginName, AddressID, BankProviderName, AccountID, TotalPrice)
       VALUES (${loginName}, ${addressID}, ${providerName}, ${accountIdValue}, @TotalPrice);
       SET @OrderID = SCOPE_IDENTITY();
       
@@ -255,7 +405,7 @@ const createOrder = async (
       DROP TABLE #SkuDetails;
     `;
 
-    return result[0];
+    return convertBigIntToNumber(result[0]);
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -317,14 +467,48 @@ const readOrderDetails = async (orderID: number) => {
     FROM OrderInfo o
     WHERE o.OrderID = ${orderID}
   `;
-  return result[0] || null;
+
+  if (!result[0]) return null;
+
+  const order = result[0];
+  const subOrderData = safeJsonParse(order.SubOrderInfo);
+  return convertBigIntToNumber({
+    ...order,
+    SubOrderInfo: subOrderData
+      ? (Array.isArray(subOrderData) ? subOrderData : [subOrderData]).map(
+          (subOrder: any) => {
+            const detailData = safeJsonParse(subOrder.SubOrderDetail);
+            return {
+              ...subOrder,
+              SubOrderDetail: detailData
+                ? (Array.isArray(detailData) ? detailData : [detailData]).map(
+                    (detail: any) => {
+                      const skuData = safeJsonParse(detail.SKU);
+                      return {
+                        ...detail,
+                        SKU: skuData
+                          ? {
+                              ...skuData,
+                              ProductInfo: safeJsonParse(skuData.ProductInfo),
+                            }
+                          : null,
+                      };
+                    }
+                  )
+                : [],
+            };
+          }
+        )
+      : [],
+    AddressInfo: safeJsonParse(order.AddressInfo),
+  });
 };
 
 const getMoneySpent = async (loginName: string) => {
   const result: any[] = await prisma.$queryRaw`
     SELECT MoneySpent FROM Buyer WHERE LoginName = ${loginName}
   `;
-  return result[0]?.MoneySpent || 0;
+  return result[0]?.MoneySpent ? Number(result[0].MoneySpent) : 0;
 };
 
 const addComment = async (
@@ -363,7 +547,7 @@ const deleteComment = async (loginName: string, commentID: number) => {
   await prisma.$executeRaw`
     DELETE FROM Comment WHERE CommentID = ${commentID}
   `;
-  return comment[0];
+  return convertBigIntToNumber(comment[0]);
 };
 
 const editComment = async (
@@ -390,7 +574,11 @@ const editComment = async (
     WHERE CommentID = ${commentID}
   `;
 
-  return { ...comment[0], Content: content, Ratings: ratings };
+  return convertBigIntToNumber({
+    ...comment[0],
+    Content: content,
+    Ratings: ratings,
+  });
 };
 
 export default {

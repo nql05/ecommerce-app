@@ -1,20 +1,37 @@
 import prisma from "../mssql/prisma";
 
+// Helper to convert BigInt to number recursively
+const convertBigIntToNumber = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "bigint") return Number(obj);
+  if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+  if (typeof obj === "object") {
+    const converted: any = {};
+    for (const key in obj) {
+      converted[key] = convertBigIntToNumber(obj[key]);
+    }
+    return converted;
+  }
+  return obj;
+};
+
 // TODO: Add pagination to listing functions + filter to get only Buyers or Sellers
 const listBuyers = async () => {
-  return prisma.$queryRaw`
+  const result = await prisma.$queryRaw`
     SELECT u.*, b.MoneySpent
     FROM UserInfo u
-    LEFT JOIN Buyer b ON u.LoginName = b.LoginName
+    INNER JOIN Buyer b ON u.LoginName = b.LoginName
   `;
+  return convertBigIntToNumber(result);
 };
 
 const listSellers = async () => {
-  return prisma.$queryRaw`
+  const result = await prisma.$queryRaw`
     SELECT u.*, s.ShopName, s.SellerName, s.MoneyEarned
     FROM UserInfo u
-    LEFT JOIN Seller s ON u.LoginName = s.LoginName
+    INNER JOIN Seller s ON u.LoginName = s.LoginName
   `;
+  return convertBigIntToNumber(result);
 };
 
 // Preserved for future use
@@ -30,7 +47,7 @@ const readBuyer = async (loginName: string) => {
     LEFT JOIN Buyer b ON u.LoginName = b.LoginName
     WHERE u.LoginName = ${loginName}
   `;
-  return result[0] || null;
+  return convertBigIntToNumber(result[0] || null);
 };
 
 const readSeller = async (loginName: string) => {
@@ -40,7 +57,7 @@ const readSeller = async (loginName: string) => {
     LEFT JOIN Seller s ON u.LoginName = s.LoginName
     WHERE u.LoginName = ${loginName}
   `;
-  return result[0] || null;
+  return convertBigIntToNumber(result[0] || null);
 };
 
 export default {
