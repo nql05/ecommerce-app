@@ -44,6 +44,22 @@ router.delete(
   sellerController.removeProduct
 );
 
+// Delete a specific SKU
+router.delete(
+  "/products/:id/sku/:skuName",
+  authenticate,
+  authorize(["S", "A"]),
+  sellerController.removeSku
+);
+
+// View product statistics
+router.get(
+  "/products/:id/statistics",
+  authenticate,
+  authorize(["S", "A"]),
+  sellerController.getProductStatistics
+);
+
 // View earnings
 router.get(
   "/earnings",

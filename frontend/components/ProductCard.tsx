@@ -19,15 +19,17 @@ export default function ProductCard({
   price,
 }: ProductCardProps) {
   return (
-    <Link href={`/product/${id || 1}`} className="block">
-      <div className="group rounded-lg p-3 shadow-sm hover:shadow-md transition bg-white flex flex-col cursor-pointer">
-        <div className="w-full aspect-square relative mb-3 overflow-hidden rounded-md bg-gray-100">
+    // @ts-ignore
+    <Link href={`/product/${id}`} className="block">
+      <div className="group rounded-lg p-3 border hover:shadow-md transition bg-white flex flex-col cursor-pointer">
+        <div className="w-full aspect-square relative mb-3 overflow-hidden rounded-md bg-white">
+          {/* @ts-ignore */}
           <Image
             src={imageUrl}
             alt={name}
             fill
             sizes="(max-width:768px) 50vw, (max-width:1200px) 25vw, 300px"
-            className="object-cover group-hover:scale-105 transition"
+            className="object-contain group-hover:scale-105 transition"
           />
         </div>
         <h3 className="text-sm font-medium line-clamp-2 mb-2">{name}</h3>

@@ -13,5 +13,8 @@
     "start:frontend": "npm --prefix frontend run start",
     "build:backend": "npm --prefix backend run build",
     "start:backend": "npm --prefix backend run start"
+  },
+  "devDependencies": {
+    "@types/react-dom": "^19.2.3"
   }
 }
