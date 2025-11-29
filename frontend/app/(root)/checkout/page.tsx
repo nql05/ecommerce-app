@@ -78,23 +78,14 @@ export default function CheckoutPage() {
           setSelectedAddressID(addressRes.data[0].AddressID);
         }
 
-        // Get selected items from sessionStorage (passed from cart page)
-        const selectedKeys = JSON.parse(
-          sessionStorage.getItem("selectedCartItems") || "[]"
-        );
+        // Use all items from cart
+        const items = cart.StoredSKU || [];
 
-        if (selectedKeys.length === 0) {
-          alert("No items selected for checkout");
+        if (items.length === 0) {
+          alert("Your cart is empty");
           router.push("/cart");
           return;
         }
-
-        // Filter cart items based on selected keys
-        const items =
-          cart.StoredSKU?.filter((item: CartItem) => {
-            const key = `${item.ProductID}:::${item.SKUName}`;
-            return selectedKeys.includes(key);
-          }) || [];
 
         setSelectedItems(items);
       } catch (err) {
@@ -160,9 +151,6 @@ export default function CheckoutPage() {
       if (cartContext) {
         await cartContext.fetchCartCount();
       }
-
-      // Clear session storage
-      sessionStorage.removeItem("selectedCartItems");
 
       alert("Order placed successfully!");
       router.push("/product");

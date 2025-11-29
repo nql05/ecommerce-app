@@ -17,8 +17,8 @@ export default function Cart() {
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const originalCart = useRef<any>(null);
 
   useEffect(() => {
     fetchCart();
@@ -28,6 +28,7 @@ export default function Cart() {
     try {
       const res = await api.get(API_PATHS.BUYER.CART.GET);
       setCart(res.data);
+      originalCart.current = JSON.parse(JSON.stringify(res.data));
     } catch (err: any) {
       if (err.response?.status === 400) {
         setError("You must be logged in as a buyer to view your cart.");
@@ -46,12 +47,18 @@ export default function Cart() {
     SKUName: string,
     Quantity: number
   ) => {
+    const originalItem = originalCart.current?.StoredSKU.find(
+      (item: any) => item.ProductID === ProductID && item.SKUName === SKUName
+    );
+    const originalQuantity = originalItem ? originalItem.Quantity : 0;
+    const delta = Quantity - originalQuantity;
     try {
       await api.post(API_PATHS.BUYER.CART.GET, {
         ProductID,
         SKUName,
-        Quantity,
+        Quantity: delta,
       });
+      fetchCart();
     } catch (err: any) {
       alert(err.response?.data?.error || "Failed to update quantity");
       fetchCart(); // Refresh cart on error
@@ -83,14 +90,17 @@ export default function Cart() {
     const maxStock = item.SKU.InStockNumber;
     if (item.Quantity < maxStock) {
       const newQuantity = item.Quantity + 1;
-      setCart((prevCart: any) => ({
-        ...prevCart,
-        StoredSKU: prevCart.StoredSKU.map((i: any) =>
+      setCart((prevCart: any) => {
+        const updatedStoredSKU = prevCart.StoredSKU.map((i: any) =>
           i.ProductID === item.ProductID && i.SKUName === item.SKUName
             ? { ...i, Quantity: newQuantity }
             : i
-        ),
-      }));
+        );
+        return {
+          ...prevCart,
+          StoredSKU: updatedStoredSKU,
+        };
+      });
       debouncedUpdateQuantity(item.ProductID, item.SKUName, newQuantity);
     }
   };
@@ -98,27 +108,33 @@ export default function Cart() {
   const decrementQuantity = (item: any) => {
     if (item.Quantity > 1) {
       const newQuantity = item.Quantity - 1;
-      setCart((prevCart: any) => ({
-        ...prevCart,
-        StoredSKU: prevCart.StoredSKU.map((i: any) =>
+      setCart((prevCart: any) => {
+        const updatedStoredSKU = prevCart.StoredSKU.map((i: any) =>
           i.ProductID === item.ProductID && i.SKUName === item.SKUName
             ? { ...i, Quantity: newQuantity }
             : i
-        ),
-      }));
+        );
+        return {
+          ...prevCart,
+          StoredSKU: updatedStoredSKU,
+        };
+      });
       debouncedUpdateQuantity(item.ProductID, item.SKUName, newQuantity);
     }
   };
 
   const handleQuantityChange = (item: any, newQuantity: number) => {
-    setCart((prevCart: any) => ({
-      ...prevCart,
-      StoredSKU: prevCart.StoredSKU.map((i: any) =>
+    setCart((prevCart: any) => {
+      const updatedStoredSKU = prevCart.StoredSKU.map((i: any) =>
         i.ProductID === item.ProductID && i.SKUName === item.SKUName
           ? { ...i, Quantity: newQuantity }
           : i
-      ),
-    }));
+      );
+      return {
+        ...prevCart,
+        StoredSKU: updatedStoredSKU,
+      };
+    });
     debouncedUpdateQuantity(item.ProductID, item.SKUName, newQuantity);
   };
 
@@ -136,82 +152,35 @@ export default function Cart() {
       if (cartContext) {
         cartContext.setCartCount(Math.max(0, cartContext.cartCount - 1));
       }
-      // Remove from selection
-      const key = `${ProductID}:::${SKUName}`;
-      setSelectedItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(key);
-        return newSet;
-      });
     } catch (err) {
       console.error("Failed to remove item:", err);
       alert("Failed to remove item");
     }
   };
 
-  const toggleSelectItem = (ProductID: number, SKUName: string) => {
-    const key = `${ProductID}:::${SKUName}`; // Use ::: as separator
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
-      } else {
-        newSet.add(key);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (!cart?.StoredSKU) return;
-    if (selectedItems.size === cart.StoredSKU.length) {
-      setSelectedItems(new Set());
-    } else {
-      const allKeys = cart.StoredSKU.map(
-        (item: any) => `${item.ProductID}:::${item.SKUName}`
-      );
-      setSelectedItems(new Set(allKeys));
-    }
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selectedItems.size === 0) {
-      alert("You have to choose product to delete!");
+  const handleDeleteAll = async () => {
+    if (!cart?.StoredSKU?.length) {
+      alert("Cart is already empty!");
       return;
     }
 
-    if (selectedItems.size === cart?.StoredSKU?.length) {
-      if (!confirm("Are you sure you want to delete all items from cart?")) {
-        return;
-      }
-    } else if (selectedItems.size === 1) {
-      if (!confirm("Are you sure you want to delete this item from cart?")) {
-        return;
-      }
-    } else if (
-      !confirm("Are you sure you want to delete these items from cart?")
-    ) {
+    if (!confirm("Are you sure you want to delete all items from cart?")) {
       return;
     }
 
     try {
-      const deletePromises = Array.from(selectedItems).map((key) => {
-        const [ProductID, SKUName] = key.split(":::"); // Split by :::
+      const deletePromises = cart.StoredSKU.map((item: any) => {
         return api.delete(API_PATHS.BUYER.CART.GET, {
-          data: { ProductID: parseInt(ProductID), SKUName },
+          data: { ProductID: item.ProductID, SKUName: item.SKUName },
         });
       });
       await Promise.all(deletePromises);
 
       // Update cart count in context
-      const itemsDeletedCount = selectedItems.size;
       if (cartContext) {
-        cartContext.setCartCount(
-          Math.max(0, cartContext.cartCount - itemsDeletedCount)
-        );
+        cartContext.setCartCount(0);
       }
 
-      setSelectedItems(new Set());
       fetchCart();
     } catch (err) {
       console.error("Failed to delete items:", err);
@@ -219,27 +188,11 @@ export default function Cart() {
     }
   };
 
-  const calculateSelectedTotal = () => {
-    if (!cart?.StoredSKU) return 0;
-    return cart.StoredSKU.reduce((sum: number, item: any) => {
-      const key = `${item.ProductID}:::${item.SKUName}`;
-      if (selectedItems.has(key)) {
-        return sum + item.SKU.Price * item.Quantity;
-      }
-      return sum;
-    }, 0);
-  };
-
   const handleCheckout = () => {
-    if (selectedItems.size === 0) {
-      alert("Please select items to checkout");
+    if (!cart?.StoredSKU?.length) {
+      alert("Your cart is empty");
       return;
     }
-    // Store selected items in sessionStorage for checkout page
-    sessionStorage.setItem(
-      "selectedCartItems",
-      JSON.stringify(Array.from(selectedItems))
-    );
     router.push("/checkout");
   };
 
@@ -273,8 +226,6 @@ export default function Cart() {
               {/* Header Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-4 mb-3 shadow-sm">
                 <div className="flex items-center gap-4">
-                  {/* Checkbox placeholder */}
-                  <div className="w-5"></div>
                   {/* Product name */}
                   <div className="flex-1 font-semibold text-gray-700">
                     Product
@@ -302,7 +253,6 @@ export default function Cart() {
                     item.SKU?.SKUImage?.[0]?.SKU_URL ||
                     "https://via.placeholder.com/100?text=No+Image";
                   const itemKey = `${item.ProductID}:::${item.SKUName}`;
-                  const isSelected = selectedItems.has(itemKey);
                   const itemTotal = item.SKU.Price * item.Quantity;
                   const maxStock = item.SKU.InStockNumber;
 
@@ -311,16 +261,6 @@ export default function Cart() {
                       key={itemKey}
                       className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4 shadow-sm"
                     >
-                      {/* Checkbox */}
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() =>
-                          toggleSelectItem(item.ProductID, item.SKUName)
-                        }
-                        className="w-5 h-5 cursor-pointer accent-brand"
-                      />
-
                       {/* Product Image */}
                       <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-white">
                         <Image
@@ -394,28 +334,14 @@ export default function Cart() {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              {/* Left side - Select All & Delete */}
+              {/* Left side - Delete All */}
               <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedItems.size === cart.StoredSKU.length &&
-                      cart.StoredSKU.length > 0
-                    }
-                    onChange={toggleSelectAll}
-                    className="w-5 h-5 accent-brand cursor-pointer"
-                  />
-                  <span className="font-medium">
-                    Select All ({cart.StoredSKU.length})
-                  </span>
-                </label>
                 <button
-                  onClick={handleDeleteSelected}
+                  onClick={handleDeleteAll}
                   className="flex items-center gap-2 text-red-500 hover:text-red-700 font-medium"
                 >
                   <Trash2 className="w-5 h-5" />
-                  Delete
+                  Delete All
                 </button>
               </div>
 
@@ -423,17 +349,16 @@ export default function Cart() {
               <div className="flex items-center gap-8">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">
-                    Total ({selectedItems.size}{" "}
-                    {selectedItems.size > 1 ? "products" : "product"}):
+                    Total ({cart.StoredSKU.length}{" "}
+                    {cart.StoredSKU.length > 1 ? "products" : "product"}):
                   </p>
                   <p className="text-2xl font-bold text-brand">
-                    {formatVND(calculateSelectedTotal())}
+                    {formatVND(cart.TotalCost)}
                   </p>
                 </div>
                 <button
                   onClick={handleCheckout}
-                  disabled={selectedItems.size === 0}
-                  className="bg-brand text-white px-12 py-3 rounded-full font-semibold hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-brand text-white px-12 py-3 rounded-full font-semibold hover:bg-opacity-90 transition"
                 >
                   Checkout
                 </button>

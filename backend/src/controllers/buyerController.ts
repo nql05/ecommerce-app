@@ -89,32 +89,6 @@ export const getCart = async (req: Request, res: Response) => {
   }
 };
 
-export const updateCart = async (req: Request, res: Response) => {
-  try {
-    const { ProductID, SKUName, Quantity } = req.body;
-
-    if (Quantity < 1) {
-      return res.status(400).json({ error: "Quantity must be at least 1" });
-    }
-
-    await buyerService.updateCartQuantity(
-      (req as any).user.loginName,
-      ProductID,
-      SKUName,
-      Quantity
-    );
-    return res.json({ message: "Updated" });
-  } catch (err) {
-    console.error(`updateCart error: ${(err as Error).message}`);
-    const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({
-      error: parsed.message,
-      code: parsed.code,
-      details: parsed.details,
-    });
-  }
-};
-
 /**
  * Remove the selected Skus from the cart and add it to a new order
  */
@@ -287,7 +261,6 @@ export default {
   getCart,
   proceedCart,
   removeFromCart,
-  updateCart,
   readOrderDetails,
   getMoneySpent,
   addComment,

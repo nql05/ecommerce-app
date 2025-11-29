@@ -134,26 +134,6 @@ const getCart = async (loginName: string) => {
   });
 };
 
-const updateCartQuantity = async (
-  loginName: string,
-  productID: number,
-  skuName: string,
-  quantity: number
-) => {
-  const cart = await prisma.cart.findFirst({ where: { LoginName: loginName } });
-  if (!cart) throw new Error("Cart not found");
-  return prisma.storedSKU.update({
-    where: {
-      ProductID_CartID_SKUName: {
-        ProductID: productID,
-        CartID: cart.CartID,
-        SKUName: skuName,
-      },
-    },
-    data: { Quantity: quantity },
-  });
-};
-
 const removeFromCart = async (
   loginName: string,
   productID: number,
@@ -416,7 +396,6 @@ export default {
   addToCart,
   getCart,
   removeFromCart,
-  updateCartQuantity,
   createOrder,
   readOrderDetails,
   getMoneySpent,
