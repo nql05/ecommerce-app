@@ -293,7 +293,7 @@ const createOrder = async (
 
     if (
       originalMessage.includes(
-        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4CA06362"
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv"
       )
     ) {
       throw new Error(
@@ -303,7 +303,7 @@ const createOrder = async (
 
     if (
       originalMessage.includes(
-        "Foreign key constraint violated: `FK__SubOrderI__Deliv__4BAC3F29"
+        "Foreign key constraint violated: `FK__SubOrderI__Deliv"
       )
     ) {
       throw new Error(
