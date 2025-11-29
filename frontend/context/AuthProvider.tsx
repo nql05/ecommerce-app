@@ -1,32 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { AuthContext } from './AuthContext';
+import { useState, useEffect } from "react";
+import { AuthContext } from "./AuthContext";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role');
+    const storedToken = localStorage.getItem("token");
+    const storedRole = localStorage.getItem("role");
+    const storedLoginName = localStorage.getItem("loginName");
     if (storedToken && storedRole) {
       setToken(storedToken);
-      setUser({ token: storedToken, role: storedRole });
+      setUser({
+        token: storedToken,
+        role: storedRole,
+        loginName: storedLoginName,
+      });
     }
   }, []);
 
-  const login = (newToken, role) => {
+  const login = (newToken, role, loginName) => {
     setToken(newToken);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('role', role);
-    setUser({ token: newToken, role });
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("role", role);
+    localStorage.setItem("loginName", loginName);
+    setUser({ token: newToken, role, loginName });
   };
 
   const logout = () => {
     setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("loginName");
     setUser(null);
   };
 
@@ -35,4 +42,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};;
+};

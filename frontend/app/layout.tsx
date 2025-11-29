@@ -1,5 +1,6 @@
 import "../styles/globals.css";
 import { AuthProvider } from "../context/AuthProvider";
+import { CartProvider } from "../context/CartContext";
 
 export const metadata = {
   title: "E-commerce App",
@@ -14,7 +15,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {/* @ts-ignore */}
+          <CartProvider>{children}</CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

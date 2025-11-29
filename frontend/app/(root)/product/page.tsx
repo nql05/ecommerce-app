@@ -19,14 +19,19 @@ export default function ProductList() {
       const fetchedProducts = response.data;
 
       // Transform database products to ProductCardProps format
-      const transformedProducts: ProductCardProps[] = fetchedProducts.map(
-        (product: any) => {
-          // Get the first SKU image or use placeholder
-          const firstSku = product.SKU?.[0];
+      const transformedProducts: ProductCardProps[] = fetchedProducts
+        .map((product: any) => {
+          const skus = product.SKU || [];
+          // Find SKU with lowest price
+          const lowestPriceSku = skus.reduce(
+            (min: any, curr: any) => (curr.Price < min.Price ? curr : min),
+            skus[0] || {}
+          );
+
           const imageUrl =
-            firstSku?.SKUImage?.[0]?.SKU_URL ||
-            "https://via.placeholder.com/300?text=No+Image";
-          const price = firstSku?.Price || 0;
+            lowestPriceSku?.SKUImage?.[0]?.SKU_URL || "/images/placeholder.png";
+
+          const price = lowestPriceSku?.Price || 0;
 
           return {
             id: product.ProductID,
@@ -34,8 +39,8 @@ export default function ProductList() {
             name: product.ProductName,
             price,
           };
-        }
-      );
+        })
+        .sort((a, b) => (a.id || 0) - (b.id || 0));
 
       // Simulate pagination by slicing
       const itemsPerPage = 8;
@@ -47,9 +52,14 @@ export default function ProductList() {
         setHasMore(false);
       }
 
-      setProducts((prev) =>
-        pageNum === 0 ? pageProducts : [...prev, ...pageProducts]
-      );
+      setProducts((prev) => {
+        if (pageNum === 0) return pageProducts;
+        const existingIds = new Set(prev.map((p) => p.id));
+        const uniqueNewProducts = pageProducts.filter(
+          (p) => !existingIds.has(p.id)
+        );
+        return [...prev, ...uniqueNewProducts];
+      });
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setHasMore(false);
@@ -87,7 +97,7 @@ export default function ProductList() {
     <main className="pt-32 pb-16">
       {/* offset for fixed header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold">Latest Products</h1>
+        <h1 className="text-3xl font-bold text-brand">Latest Products</h1>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((p, index) => (
