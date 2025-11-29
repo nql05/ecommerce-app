@@ -1,3 +1,16 @@
+SELECT SYSTEM_USER;
+
+USE Ecommerce;
+GO
+
+SELECT * FROM Cart;
+
+SELECT * FROM StoredSKU;
+
+SELECT * FROM OrderInfo;
+
+SELECT * FROM SubOrderInfo;
+
 -- Use Procedure 0 for + - quantity button
 EXEC prc_UpdateQuantityStoredSKU 
     @Quantity = 5, 
