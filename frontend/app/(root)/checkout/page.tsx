@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const cartContext = useContext(CartContext);
   const [selectedItems, setSelectedItems] = useState<CartItem[]>([]);
+  const [cartTotal, setCartTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [accountID, setAccountID] = useState("");
   const [providerName, setProviderName] = useState("VCB");
@@ -67,6 +68,7 @@ export default function CheckoutPage() {
 
         const cart = cartRes.data;
         setAddresses(addressRes.data);
+        setCartTotal(cart.TotalCost || 0);
 
         // Set default address if available
         const defaultAddr = addressRes.data.find(
@@ -100,15 +102,8 @@ export default function CheckoutPage() {
     fetchCartAndSelectedItems();
   }, [router]);
 
-  const calculateSubtotal = () => {
-    return selectedItems.reduce(
-      (sum, item) => sum + item.SKU.Price * item.Quantity,
-      0
-    );
-  };
-
   const calculateTotal = () => {
-    return calculateSubtotal() + deliveryProvider.fee;
+    return cartTotal + deliveryProvider.fee;
   };
 
   const handlePlaceOrder = async () => {
@@ -280,7 +275,7 @@ export default function CheckoutPage() {
                       </div>
 
                       {/* Unit Price */}
-                      <div className="col-span-2 text-center text-sm">
+                      <div className="col-span-2 text-center text-sm font-semibold">
                         {formatVND(item.SKU.Price)}
                       </div>
 
@@ -404,9 +399,7 @@ export default function CheckoutPage() {
                     Subtotal ({selectedItems.length}{" "}
                     {selectedItems.length > 1 ? "items" : "item"}):
                   </span>
-                  <span className="font-semibold">
-                    {formatVND(calculateSubtotal())}
-                  </span>
+                  <span className="font-semibold">{formatVND(cartTotal)}</span>
                 </div>
 
                 {/* Shipping */}
