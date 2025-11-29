@@ -3,7 +3,7 @@ GO
 
 
 -- ======================================================
--- Function: Caclulate TotalCost of Cart based on Quantity of StoredSKU and Price in SKU
+-- Function 1: Caclulate TotalCost of Cart based on Quantity of StoredSKU and Price in SKU
 -- ======================================================
 CREATE FUNCTION func_CalculateCartTotal(@CartID INT)
 RETURNS BIGINT
@@ -16,13 +16,12 @@ BEGIN
     JOIN SKU ON StoredSKU.ProductID = SKU.ProductID AND StoredSKU.SKUName = SKU.SKUName
     WHERE StoredSKU.CartID = @CartID
 
-    RETURN @TotalCost
+    RETURN ISNULL(@TotalCost, 0)
 END;
 GO
 
-
 -- ======================================================
--- Function: Calculate TotalCost in SubOrder based on Total_SKU_Price + Delivery Price + Applied Voucher discount
+-- Function 2: Calculate TotalCost in SubOrder based on Total_SKU_Price + Delivery Price + Applied Voucher discount
 -- ======================================================
 CREATE FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
 RETURNS BIGINT
@@ -82,14 +81,33 @@ END;
 GO
 
 -- ======================================================
--- Function: Calculate TotalCost based on
+-- Procedure 0: Alter Quantity in StoredSKU
 -- ======================================================
+CREATE PROCEDURE prc_UpdateQuantityStoredSKU
+    @Quantity INT,
+    @CartID INT,
+    @ProductID INT,
+    @SKUName VARCHAR(100)
+AS
+BEGIN
+    IF @Quantity <= 0 
+    BEGIN
+        DELETE FROM StoredSKU
+        WHERE CartID = @CartID AND ProductID = @ProductID AND SKUName = @SKUName;
+    END
+    ELSE BEGIN
+        UPDATE StoredSKU
+        SET Quantity = @Quantity
+        WHERE CartID = @CartID AND ProductID = @ProductID
+    END
+END;
+GO
 
 -- ======================================================
--- Procedure: Move data from Cart table into Order table, 
+-- Procedure 1: Move data from Cart table into Order table, 
 -- Parameters are AccountID, ProviderName, AddressID; Time and Date are depends on the real time buyers make orders
 -- ======================================================
-CREATE PROCEDURE prc_CreateOrderFromCart
+CREATE PROCEDURE prc_CreateOrderFromStoredSKU
     @LoginName VARCHAR(100),
     @AccountID VARCHAR(30),
     @BankProviderName VARCHAR(10),
@@ -105,7 +123,7 @@ BEGIN
         DECLARE @CartID INT;
         DECLARE @CartTotalCost INT;
         DECLARE @AddressID INT;
-        DECLARE @DeliverPrice INT = 30000;
+        DECLARE @DeliveryPrice INT = 30000;
         DECLARE @NewOrderID INT;
         DECLARE @NewSubOrderID INT;
 
@@ -117,7 +135,7 @@ BEGIN
         -- 2. Get the Default Address ID from AddressInfo table
         SELECT TOP 1 @AddressID = AddressID
         FROM AddressInfo
-        WHERE LoginName = @LoginName AND IsAddressDefault = 1;
+        WHERE LoginName = @LoginName AND IsAddressDefault = 'Y';
 
         -- Safety Check: Stop if  buyer doesn't add SKU to their cart
         IF @CartTotalCost = 0
@@ -174,12 +192,84 @@ BEGIN
         DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
         PRINT 'Error occurred: ' + @ErrorMessage;
     END CATCH
-END
+END;
 GO 
 
 -- ======================================================
--- Procedure: 
+-- Procedure 2: Update Buyer's Money Spent OR Seller's Money Earned
 -- ======================================================
+CREATE PROCEDURE prc_UpdateMoney
+    @UserRole VARCHAR(10), -- Buyer OR Seller
+    @LoginName VARCHAR(100),
+    @Amount BIGINT
+AS
+BEGIN
+    IF @UserRole = 'Buyer'
+    BEGIN
+        UPDATE Buyer
+        SET MoneySpent = MoneySpent + @Amount
+        WHERE LoginName = @LoginName;
+    END
+    ELSE IF @UserRole = 'Seller'
+    BEGIN
+        UPDATE Seller
+        SET MoneyEarned = MoneyEarned + @Amount
+        WHERE LoginName = @LoginName;
+    END
+    ELSE
+    BEGIN
+        PRINT 'Error: Invalid UserRole. Must be "Buyer" or "Seller".';
+    END
+END;
+GO
+
+-- ======================================================
+-- Procedure 3: Update InStockNumber (Decrease Stock)
+-- ======================================================
+CREATE PROCEDURE prc_UpdateInStockNumber
+    @ProductID INT,
+    @SKUName VARCHAR(100),
+    @Quantity INT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM SKU WHERE ProductID = @ProductID AND SKUName = @SKUName AND InStockNumber < @Quantity)
+    BEGIN
+        RAISERROR('Insufficient stock for ProductID: %d, SKU: %s', 16, 1, @ProductID, @SKUName);
+        RETURN;
+    END
+
+    UPDATE SKU
+    SET InStockNumber = InStockNumber - @Quantity
+    WHERE ProductID = @ProductID and SKUName = @SKUName;
+END;
+GO
+
+-- ======================================================
+-- Procedure 4: DELETE data from StoredSKU 
+-- ======================================================
+CREATE PROCEDURE prc_DeleteStoredSKU
+    @LoginName VARCHAR(100)
+AS
+BEGIN
+    DECLARE @CartID INT;
+
+    -- 1. Get the CartID for this buyer
+    SELECT @CartID = CartID 
+    FROM Cart 
+    WHERE LoginName = @LoginName;
+
+    -- 2. Delete the specific item from StoredSKU
+    IF @CartID IS NOT NULL
+    BEGIN
+        DELETE FROM StoredSKU
+        WHERE CartID = @CartID;
+    END
+END;
+GO
+
+
+
+
 
 
 

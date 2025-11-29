@@ -91,12 +91,16 @@ CREATE TABLE AddressInfo (
     Commune VARCHAR(100) NOT NULL,
     DetailAddress VARCHAR(500) NOT NULL,
     AddressType VARCHAR(50) NOT NULL DEFAULT 'Home' CHECK (AddressType IN ('Home', 'Office')), -- Home or Office
-    IsAddressDefault BIT NOT NULL DEFAULT 0, -- 0 = True, 1 = False
+    IsAddressDefault CHAR(1) NOT NULL DEFAULT 'Y' CHECK (IsAddressDefault IN ('Y', 'N')), -- 0 = True, 1 = False
 	-- Constraints
 	PRIMARY KEY(LoginName, AddressID),
 	FOREIGN KEY (LoginName) REFERENCES UserInfo(LoginName) ON DELETE CASCADE ON UPDATE CASCADE,
 );
 GO
+
+CREATE UNIQUE NONCLUSTERED INDEX idx_UniqueDefaultAddress
+ON AddressInfo(LoginName)
+WHERE IsAddressDefault = 'Y';
 
 -- ======================================================
 -- Table: OrderInfo
