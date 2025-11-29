@@ -2,10 +2,19 @@ import prisma from "../mssql/prisma";
 
 const listSellerProducts = async (loginName: string) => {
   try {
-    return await prisma.productInfo.findMany({
-      where: { LoginName: loginName },
-      include: { SKU: { include: { Comment: false, SKUImage: true } } },
-    });
+    return await prisma.$queryRaw`
+      SELECT 
+        p.*,
+        (
+          SELECT s.*, 
+            (SELECT i.* FROM SKUImage i WHERE i.ProductID = s.ProductID AND i.SKUName = s.SKUName FOR JSON PATH) AS SKUImage
+          FROM SKU s 
+          WHERE s.ProductID = p.ProductID 
+          FOR JSON PATH
+        ) AS SKU
+      FROM ProductInfo p
+      WHERE p.LoginName = ${loginName}
+    `;
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -17,13 +26,16 @@ const listSellerProducts = async (loginName: string) => {
 
 const createProduct = async (loginName: string, data: any) => {
   try {
-    // Prevent clients from setting identity/PK values (ProductID)
     const { ProductID, ...payload } = data || {};
+    const { ProductName, Description, CatalogID, BrandName, ProductStatus } =
+      payload;
 
-    // Force the LoginName from authenticated user
-    return await prisma.productInfo.create({
-      data: { ...payload, LoginName: loginName },
-    });
+    const result: any[] = await prisma.$queryRaw`
+      INSERT INTO ProductInfo (LoginName, ProductName, Description, CatalogID, BrandName, ProductStatus)
+      OUTPUT INSERTED.*
+      VALUES (${loginName}, ${ProductName}, ${Description}, ${CatalogID}, ${BrandName}, ${ProductStatus})
+    `;
+    return result[0];
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -35,10 +47,21 @@ const createProduct = async (loginName: string, data: any) => {
 
 const readProduct = async (id: number) => {
   try {
-    return await prisma.productInfo.findUnique({
-      where: { ProductID: id },
-      include: { SKU: { include: { Comment: true, SKUImage: true } } },
-    });
+    const result: any[] = await prisma.$queryRaw`
+      SELECT 
+        p.*,
+        (
+          SELECT s.*, 
+            (SELECT c.* FROM Comment c WHERE c.ProductID = s.ProductID AND c.SKUName = s.SKUName FOR JSON PATH) AS Comment,
+            (SELECT i.* FROM SKUImage i WHERE i.ProductID = s.ProductID AND i.SKUName = s.SKUName FOR JSON PATH) AS SKUImage
+          FROM SKU s 
+          WHERE s.ProductID = p.ProductID 
+          FOR JSON PATH
+        ) AS SKU
+      FROM ProductInfo p
+      WHERE p.ProductID = ${id}
+    `;
+    return result[0] || null;
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -48,12 +71,21 @@ const readProduct = async (id: number) => {
 
 const updateProduct = async (id: number, data: any) => {
   try {
-    // Do not allow modifying identity columns
     const { ProductID, SKUID, ...payload } = data || {};
-    return await prisma.productInfo.update({
-      where: { ProductID: id },
-      data: payload,
-    });
+    const { ProductName, Description, CatalogID, BrandName, ProductStatus } =
+      payload;
+
+    await prisma.$executeRaw`
+      UPDATE ProductInfo
+      SET ProductName = COALESCE(${ProductName}, ProductName),
+          Description = COALESCE(${Description}, Description),
+          CatalogID = COALESCE(${CatalogID}, CatalogID),
+          BrandName = COALESCE(${BrandName}, BrandName),
+          ProductStatus = COALESCE(${ProductStatus}, ProductStatus)
+      WHERE ProductID = ${id}
+    `;
+
+    return readProduct(id);
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -63,9 +95,13 @@ const updateProduct = async (id: number, data: any) => {
 
 const deleteProduct = async (id: number) => {
   try {
-    // Delete associated SKUs first (and their cascaded relations)
-    await prisma.sKU.deleteMany({ where: { ProductID: id } });
-    return await prisma.productInfo.delete({ where: { ProductID: id } });
+    await prisma.$executeRaw`DELETE FROM SKU WHERE ProductID = ${id}`;
+    const result: any[] = await prisma.$queryRaw`
+      DELETE FROM ProductInfo 
+      OUTPUT DELETED.*
+      WHERE ProductID = ${id}
+    `;
+    return result[0];
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -75,11 +111,10 @@ const deleteProduct = async (id: number) => {
 
 const getEarnings = async (loginName: string) => {
   try {
-    const seller = await prisma.seller.findUnique({
-      where: { LoginName: loginName },
-      select: { MoneyEarned: true },
-    });
-    return seller?.MoneyEarned || 0;
+    const result: any[] = await prisma.$queryRaw`
+      SELECT MoneyEarned FROM Seller WHERE LoginName = ${loginName}
+    `;
+    return result[0]?.MoneyEarned || 0;
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);
@@ -91,13 +126,16 @@ const getEarnings = async (loginName: string) => {
 
 const getProductStatistics = async (productId: number) => {
   try {
-    const sales = await prisma.subOrderDetail.findMany({
-      where: { ProductID: productId },
-      include: {
-        SubOrderInfo: true,
-        SKU: true,
-      },
-    });
+    const sales: any[] = await prisma.$queryRaw`
+      SELECT 
+        sod.*,
+        soi.ActualDate,
+        s.Price
+      FROM SubOrderDetail sod
+      JOIN SubOrderInfo soi ON sod.SubOrderID = soi.SubOrderID
+      JOIN SKU s ON sod.ProductID = s.ProductID AND sod.SKUName = s.SKUName
+      WHERE sod.ProductID = ${productId}
+    `;
 
     let totalSold = 0;
     let totalRevenue = 0;
@@ -108,9 +146,9 @@ const getProductStatistics = async (productId: number) => {
 
     for (const sale of sales) {
       const qty = sale.Quantity;
-      const price = sale.SKU.Price;
+      const price = sale.Price;
       const revenue = qty * price;
-      const date = new Date(sale.SubOrderInfo.ActualDate);
+      const date = new Date(sale.ActualDate);
 
       totalSold += qty;
       totalRevenue += revenue;
@@ -152,14 +190,12 @@ const getProductStatistics = async (productId: number) => {
 
 const deleteSku = async (productId: number, skuName: string) => {
   try {
-    return await prisma.sKU.delete({
-      where: {
-        ProductID_SKUName: {
-          ProductID: productId,
-          SKUName: skuName,
-        },
-      },
-    });
+    const result: any[] = await prisma.$queryRaw`
+      DELETE FROM SKU 
+      OUTPUT DELETED.*
+      WHERE ProductID = ${productId} AND SKUName = ${skuName}
+    `;
+    return result[0];
   } catch (error) {
     const originalMessage =
       error instanceof Error ? error.message : String(error);

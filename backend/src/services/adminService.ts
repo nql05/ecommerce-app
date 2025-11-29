@@ -2,11 +2,19 @@ import prisma from "../mssql/prisma";
 
 // TODO: Add pagination to listing functions + filter to get only Buyers or Sellers
 const listBuyers = async () => {
-  return prisma.userInfo.findMany({ include: { Buyer: true } });
+  return prisma.$queryRaw`
+    SELECT u.*, b.MoneySpent
+    FROM UserInfo u
+    LEFT JOIN Buyer b ON u.LoginName = b.LoginName
+  `;
 };
 
 const listSellers = async () => {
-  return prisma.userInfo.findMany({ include: { Seller: true } });
+  return prisma.$queryRaw`
+    SELECT u.*, s.ShopName, s.SellerName, s.MoneyEarned
+    FROM UserInfo u
+    LEFT JOIN Seller s ON u.LoginName = s.LoginName
+  `;
 };
 
 // Preserved for future use
@@ -16,20 +24,23 @@ const listSellers = async () => {
 
 // TODO: Optimize query to include all necessary fields (cart, orders, etc.)
 const readBuyer = async (loginName: string) => {
-  return prisma.userInfo.findUnique({
-    where: { LoginName: loginName },
-    include: {
-      Buyer: true,
-      AddressInfo: true,
-    },
-  });
+  const result: any[] = await prisma.$queryRaw`
+    SELECT u.*, b.MoneySpent
+    FROM UserInfo u
+    LEFT JOIN Buyer b ON u.LoginName = b.LoginName
+    WHERE u.LoginName = ${loginName}
+  `;
+  return result[0] || null;
 };
 
 const readSeller = async (loginName: string) => {
-  return prisma.userInfo.findUnique({
-    where: { LoginName: loginName },
-    include: { Seller: true },
-  });
+  const result: any[] = await prisma.$queryRaw`
+    SELECT u.*, s.ShopName, s.SellerName, s.MoneyEarned
+    FROM UserInfo u
+    LEFT JOIN Seller s ON u.LoginName = s.LoginName
+    WHERE u.LoginName = ${loginName}
+  `;
+  return result[0] || null;
 };
 
 export default {
