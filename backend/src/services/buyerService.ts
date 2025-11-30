@@ -1,77 +1,85 @@
 import prisma from "../mssql/prisma";
 
 const findMany = async (search?: string) => {
-  return prisma.productInfo.findMany({
-    where: search ? { ProductName: { contains: search } } : {},
-    include: {
-      SKU: {
-        include: {
-          Comment: true,
-          SKUImage: true,
-        },
-      },
-    },
-  });
-};
-
-const findUnique = async (id: number) => {
+  const searchPattern = search ? `%${search}%` : "%";
+  //Query ProductInfo + SKU of that Product + SKUImage + Comment
   const result = await prisma.$queryRaw<any[]>`
     SELECT 
-      p.ProductID, 
-      p.LoginName, 
-      p.ProductName, 
-      p.ProductBrand, 
-      p.ProductCategory, 
-      p.ProductDescription, 
-      p.ProductMadeIn,
-      (
+      p.*,
+      JSON_QUERY((
         SELECT 
-          s.ProductID, 
-          s.SKUName, 
-          s.Size, 
-          s.Price, 
-          s.InStockNumber, 
-          s.Weight,
-          (
+          s.*,
+          JSON_QUERY((
             SELECT 
-              c.CommentID, 
-              c.LoginName, 
-              c.ProductID, 
-              c.SKUName, 
-              c.Ratings, 
-              c.Content, 
-              c.ParentCommentID
+              c.*
             FROM Comment c
             WHERE c.ProductID = s.ProductID AND c.SKUName = s.SKUName
             FOR JSON PATH
-          ) AS Comment,
-          (
+          )) AS Comment,
+          JSON_QUERY((
             SELECT 
-              si.ProductID,
-              si.SKUName,
-              si.SKU_URL
+              si.*
             FROM SKUImage si
             WHERE si.ProductID = s.ProductID AND si.SKUName = s.SKUName
             FOR JSON PATH
-          ) AS SKUImage
+          )) AS SKUImage
         FROM SKU s
         WHERE s.ProductID = p.ProductID
         FOR JSON PATH
-      ) AS SKU
+      )) AS SKU
+    FROM ProductInfo p
+    WHERE p.ProductName LIKE ${searchPattern}
+    FOR JSON PATH
+  `;
+
+  if (!result || result.length === 0) return [];
+  const jsonString = result.map(row => Object.values(row)[0]).join('');
+  if (!jsonString) return [];
+  return JSON.parse(jsonString);
+};
+
+const findUnique = async (id: number) => {
+  // Query ProductInfo + SKU + Comment + SKUImage
+  const result = await prisma.$queryRaw<any[]>`
+    SELECT 
+      p.*,
+      JSON_QUERY((
+        SELECT 
+          s.*,
+          JSON_QUERY((
+            SELECT 
+              c.*
+            FROM Comment c
+            WHERE c.ProductID = s.ProductID AND c.SKUName = s.SKUName
+            FOR JSON PATH
+          )) AS Comment,
+          JSON_QUERY((
+            SELECT 
+              si.*
+            FROM SKUImage si
+            WHERE si.ProductID = s.ProductID AND si.SKUName = s.SKUName
+            FOR JSON PATH
+          )) AS SKUImage
+        FROM SKU s
+        WHERE s.ProductID = p.ProductID
+        FOR JSON PATH
+      )) AS SKU
     FROM ProductInfo p
     WHERE p.ProductID = ${id}
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
   `;
 
   if (!result || result.length === 0) return null;
-  const jsonString = Object.values(result[0])[0] as string;
+  const jsonString = result.map(row => Object.values(row)[0]).join('');
   if (!jsonString) return null;
   return JSON.parse(jsonString);
 };
 
 const getAddresses = async (loginName: string) => {
   return prisma.$queryRaw`
-    SELECT * FROM AddressInfo WHERE LoginName = ${loginName}
+    SELECT * 
+    FROM AddressInfo 
+    WHERE LoginName = ${loginName}
   `;
 };
 
@@ -83,7 +91,9 @@ const addToCart = async (
 ) => {
   // 1. Get CartID
   const cartResult = await prisma.$queryRaw<any[]>`
-    SELECT CartID FROM Cart WHERE LoginName = ${loginName}
+    SELECT CartID 
+    FROM Cart 
+    WHERE LoginName = ${loginName}
   `;
   
   if (!cartResult || cartResult.length === 0) throw new Error("Cart not found");
@@ -91,7 +101,8 @@ const addToCart = async (
 
   // 2. Get SKU details (Price, Stock)
   const skuResult = await prisma.$queryRaw<any[]>`
-    SELECT Price, InStockNumber FROM SKU 
+    SELECT Price, InStockNumber 
+    FROM SKU 
     WHERE ProductID = ${productID} AND SKUName = ${skuName}
   `;
 
@@ -114,7 +125,8 @@ const addToCart = async (
   // 5. Upsert into StoredSKU using MERGE or IF EXISTS
   // We need to check existing quantity to validate stock again
   const existingItem = await prisma.$queryRaw<any[]>`
-    SELECT Quantity FROM StoredSKU 
+    SELECT Quantity 
+    FROM StoredSKU 
     WHERE CartID = ${cartID} AND ProductID = ${productID} AND SKUName = ${skuName}
   `;
 
@@ -131,7 +143,9 @@ const addToCart = async (
 
   return prisma.$executeRaw`
     MERGE StoredSKU AS target
-    USING (SELECT ${cartID} AS CartID, ${productID} AS ProductID, ${skuName} AS SKUName) AS source
+    USING (
+      SELECT ${cartID} AS CartID, ${productID} AS ProductID, ${skuName} AS SKUName
+    ) AS source
     ON (target.CartID = source.CartID AND target.ProductID = source.ProductID AND target.SKUName = source.SKUName)
     WHEN MATCHED THEN
         UPDATE SET Quantity = Quantity + ${quantity}
@@ -142,48 +156,44 @@ const addToCart = async (
 };
 
 const getCart = async (loginName: string) => {
+  // Quert Cart + StoredSKU
   const result = await prisma.$queryRaw<any[]>`
     SELECT 
-      c.CartID,
-      c.LoginName,
-      c.TotalCost,
-      (
+      c.*,
+      JSON_QUERY((
         SELECT 
-          ss.CartID,
-          ss.ProductID,
-          ss.SKUName,
-          ss.Quantity,
-          (
+          ss.*,
+          JSON_QUERY((
             SELECT 
-              s.ProductID,
-              s.SKUName,
-              s.Size,
-              s.Price,
-              s.InStockNumber,
-              s.Weight,
-              (
+              s.*,
+              JSON_QUERY((
                 SELECT * FROM ProductInfo p WHERE p.ProductID = s.ProductID FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-              ) AS ProductInfo,
-              (
+              )) AS ProductInfo,
+              JSON_QUERY((
                 SELECT * FROM SKUImage si WHERE si.ProductID = s.ProductID AND si.SKUName = s.SKUName FOR JSON PATH
-              ) AS SKUImage
+              )) AS SKUImage
             FROM SKU s
             WHERE s.ProductID = ss.ProductID AND s.SKUName = ss.SKUName
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-          ) AS SKU
+          )) AS SKU
         FROM StoredSKU ss
         WHERE ss.CartID = c.CartID
         FOR JSON PATH
-      ) AS StoredSKU
+      )) AS StoredSKU
     FROM Cart c
     WHERE c.LoginName = ${loginName}
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-  `;
-
-  if (!result || result.length === 0) return null;
-  const jsonString = Object.values(result[0])[0] as string;
-  if (!jsonString) return null;
-  return JSON.parse(jsonString);
+    `;
+    
+    if (!result || result.length === 0) return null;
+    const jsonString = result.map(row => Object.values(row)[0]).join('');
+    if (!jsonString) {
+      console.log("Error JSON String")
+      return null;
+    }
+      const parsedResult = JSON.parse(jsonString);
+    console.log(JSON.stringify(parsedResult, null, 2));
+  return parsedResult;
 };
 
 const updateCartQuantity = async (
@@ -210,7 +220,11 @@ const removeFromCart = async (
   productID: number,
   skuName: string
 ) => {
-  const cartResult = await prisma.$queryRaw<any[]>`SELECT CartID FROM Cart WHERE LoginName = ${loginName}`;
+  const cartResult = await prisma.$queryRaw<any[]>`
+    SELECT CartID 
+    FROM Cart 
+    WHERE LoginName = ${loginName}
+  `;
   if (!cartResult || cartResult.length === 0) throw new Error("Cart not found");
   const cartID = cartResult[0].CartID;
 
@@ -229,189 +243,82 @@ const createOrder = async (
   deliveryProvider: string,
   accountID?: string | number | null
 ) => {
-  try {
-    if (!Array.isArray(skus) || skus.length === 0) {
-      throw new Error("Invalid order: skus must be a non-empty array");
-    }
+  const accountIdValue = accountID == null ? null : String(accountID);
 
-    const accountIdValue = accountID == null ? null : String(accountID);
-    const skusJson = JSON.stringify(skus);
+  // Execute the stored procedure
+  // Note: The procedure uses the default address for the user and items from the cart (StoredSKU).
+  // skus and addressID parameters are ignored by the procedure.
+  await prisma.$executeRaw`
+    EXEC prc_CreateOrderFromStoredSKU
+      @LoginName = ${loginName},
+      @AccountID = ${accountIdValue},
+      @BankProviderName = ${providerName},
+      @DeliveryMethodName = ${deliveryMethod},
+      @DeliveryProviderName = ${deliveryProvider},
+      @AddressID = ${addressID}
+  `;
 
-    const result = await prisma.$queryRaw<any[]>`
-      BEGIN TRANSACTION;
-      BEGIN TRY
-        -- 1. Validate SKUs and Calculate Totals
-        DECLARE @TotalOrderPrice INT = 0;
-        DECLARE @SellerEarnings TABLE (LoginName VARCHAR(100), Earnings INT);
-        
-        -- Parse JSON input
-        DECLARE @InputSKUs TABLE (ProductID INT, SKUName VARCHAR(100), Quantity INT);
-        INSERT INTO @InputSKUs (ProductID, SKUName, Quantity)
-        SELECT ProductID, SKUName, Quantity
-        FROM OPENJSON(${skusJson})
-        WITH (ProductID INT, SKUName VARCHAR(100), Quantity INT);
+  // Fetch the latest order for this user to return details
+  const result = await prisma.$queryRaw<any[]>`
+    SELECT TOP 1 OrderID 
+    FROM OrderInfo 
+    WHERE LoginName = ${loginName} 
+    ORDER BY OrderID DESC
+  `;
 
-        -- Check if all SKUs exist
-        IF EXISTS (
-            SELECT 1 FROM @InputSKUs i
-            LEFT JOIN SKU s ON i.ProductID = s.ProductID AND i.SKUName = s.SKUName
-            WHERE s.ProductID IS NULL
-        )
-        BEGIN
-            THROW 50000, 'One or more SKUs not found', 1;
-        END
+  if (!result || result.length === 0) throw new Error("Order creation failed or no order found");
+  const newOrderID = result[0].OrderID;
 
-        -- Calculate Totals and Seller Earnings
-        INSERT INTO @SellerEarnings (LoginName, Earnings)
-        SELECT p.LoginName, SUM(s.Price * i.Quantity)
-        FROM @InputSKUs i
-        JOIN SKU s ON i.ProductID = s.ProductID AND i.SKUName = s.SKUName
-        JOIN ProductInfo p ON s.ProductID = p.ProductID
-        GROUP BY p.LoginName;
-
-        SELECT @TotalOrderPrice = SUM(Earnings) FROM @SellerEarnings;
-
-        -- 2. Create Order
-        DECLARE @NewOrderID INT;
-        INSERT INTO OrderInfo (LoginName, AddressID, ProviderName, AccountID, TotalPrice)
-        VALUES (${loginName}, ${addressID}, ${providerName}, ${accountIdValue}, @TotalOrderPrice);
-        SET @NewOrderID = SCOPE_IDENTITY();
-
-        -- 3. Create SubOrder (Single SubOrder for now as per original logic)
-        DECLARE @NewSubOrderID INT;
-        INSERT INTO SubOrderInfo (OrderID, DeliveryMethodName, DeliveryProviderName, ActualDate, ExpectedDate, DeliveryPrice, TotalSKUPrice)
-        VALUES (@NewOrderID, ${deliveryMethod}, ${deliveryProvider}, GETDATE(), DATEADD(DAY, 3, GETDATE()), 36363, @TotalOrderPrice);
-        SET @NewSubOrderID = SCOPE_IDENTITY();
-
-        -- 4. Create SubOrderDetails
-        INSERT INTO SubOrderDetail (OrderID, SubOrderID, ProductID, SKUName, Quantity)
-        SELECT @NewOrderID, @NewSubOrderID, ProductID, SKUName, Quantity
-        FROM @InputSKUs;
-
-        -- 5. Update Seller Earnings
-        UPDATE s
-        SET MoneyEarned = s.MoneyEarned + se.Earnings
-        FROM Seller s
-        JOIN @SellerEarnings se ON s.LoginName = se.LoginName;
-
-        -- 6. Update Buyer MoneySpent
-        UPDATE Buyer
-        SET MoneySpent = MoneySpent + @TotalOrderPrice
-        WHERE LoginName = ${loginName};
-
-        COMMIT TRANSACTION;
-
-        -- Return the created OrderID to fetch details
-        SELECT @NewOrderID as OrderID;
-      END TRY
-      BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        THROW 50000, @ErrorMessage, 1;
-      END CATCH
-    `;
-
-    if (!result || result.length === 0) throw new Error("Order creation failed");
-    const newOrderID = result[0].OrderID;
-
-    return readOrderDetails(newOrderID);
-  } catch (error) {
-    const originalMessage =
-      error instanceof Error ? error.message : String(error);
-
-    if (
-      originalMessage.includes(
-        "Foreign key constraint violated: `FK__SubOrderI__Deliv"
-      )
-    ) {
-      throw new Error(
-        "Invalid order: delivery provider not found, choose among Giao Hang Nhanh, GrabExpress, VNPost"
-      );
-    }
-
-    if (
-      originalMessage.includes(
-        "Foreign key constraint violated: `FK__SubOrderI__Deliv"
-      )
-    ) {
-      throw new Error(
-        "Invalid order: delivery method not found, choose among Economy, Express, Standard"
-      );
-    }
-    throw new Error(
-      `Failed to create order for ${loginName}: ${originalMessage}`
-    );
-  }
+  return readOrderDetails(newOrderID);
 };
 
 const readOrderDetails = async (orderID: number) => {
   const result = await prisma.$queryRaw<any[]>`
     SELECT 
-      o.OrderID,
-      o.LoginName,
-      o.OrderDate,
-      o.TotalPrice,
-      o.ProviderName,
-      o.AccountID,
-      o.AddressID,
-      (
+      o.*,
+      JSON_QUERY((
         SELECT * FROM AddressInfo a WHERE a.AddressID = o.AddressID AND a.LoginName = o.LoginName FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-      ) AS AddressInfo,
-      (
+      )) AS AddressInfo,
+      JSON_QUERY((
         SELECT 
-          so.OrderID,
-          so.SubOrderID,
-          so.DeliveryMethodName,
-          so.DeliveryProviderName,
-          so.ActualDate,
-          so.ExpectedDate,
-          so.DeliveryPrice,
-          so.TotalSKUPrice,
-          so.ShippingStatus,
-          (
+          so.*,
+          JSON_QUERY((
             SELECT 
-              sod.OrderID,
-              sod.SubOrderID,
-              sod.ProductID,
-              sod.SKUName,
-              sod.Quantity,
-              (
+              sod.*,
+              JSON_QUERY((
                 SELECT 
-                  s.ProductID,
-                  s.SKUName,
-                  s.Size,
-                  s.Price,
-                  s.InStockNumber,
-                  s.Weight,
-                  (
+                  s.*,
+                  JSON_QUERY((
                     SELECT * FROM ProductInfo p WHERE p.ProductID = s.ProductID FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-                  ) AS ProductInfo
+                  )) AS ProductInfo
                 FROM SKU s
                 WHERE s.ProductID = sod.ProductID AND s.SKUName = sod.SKUName
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-              ) AS SKU
+              )) AS SKU
             FROM SubOrderDetail sod
             WHERE sod.OrderID = so.OrderID AND sod.SubOrderID = so.SubOrderID
             FOR JSON PATH
-          ) AS SubOrderDetail
+          )) AS SubOrderDetail
         FROM SubOrderInfo so
         WHERE so.OrderID = o.OrderID
         FOR JSON PATH
-      ) AS SubOrderInfo
+      )) AS SubOrderInfo
     FROM OrderInfo o
     WHERE o.OrderID = ${orderID}
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
   `;
 
   if (!result || result.length === 0) return null;
-  const jsonString = Object.values(result[0])[0] as string;
+  const jsonString = result.map(row => Object.values(row)[0]).join('');
   if (!jsonString) return null;
   return JSON.parse(jsonString);
 };
 
 const getMoneySpent = async (loginName: string) => {
   const result = await prisma.$queryRaw<any[]>`
-    SELECT MoneySpent FROM Buyer WHERE LoginName = ${loginName}
+    SELECT MoneySpent 
+    FROM Buyer 
+    WHERE LoginName = ${loginName}
   `;
   if (!result || result.length === 0) return 0;
   return result[0].MoneySpent || 0;
@@ -432,7 +339,9 @@ const addComment = async (
 
 const deleteComment = async (loginName: string, commentID: number) => {
   const comment = await prisma.$queryRaw<any[]>`
-    SELECT LoginName FROM Comment WHERE CommentID = ${commentID}
+    SELECT LoginName 
+    FROM Comment 
+    WHERE CommentID = ${commentID}
   `;
 
   if (!comment || comment.length === 0) {
@@ -444,7 +353,8 @@ const deleteComment = async (loginName: string, commentID: number) => {
   }
 
   return prisma.$executeRaw`
-    DELETE FROM Comment WHERE CommentID = ${commentID}
+    DELETE FROM Comment 
+    WHERE CommentID = ${commentID}
   `;
 };
 
@@ -455,7 +365,9 @@ const editComment = async (
   ratings: number
 ) => {
   const comment = await prisma.$queryRaw<any[]>`
-    SELECT LoginName FROM Comment WHERE CommentID = ${commentID}
+    SELECT LoginName 
+    FROM Comment 
+    WHERE CommentID = ${commentID}
   `;
 
   if (!comment || comment.length === 0) {

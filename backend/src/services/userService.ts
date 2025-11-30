@@ -34,6 +34,8 @@ const createUser = async ({
 };
 
 const findByLoginName = async (loginName: string) => {
+  console.log("Find user of name: ", loginName);
+
   return prisma.userInfo.findUnique({
     where: { LoginName: loginName },
     include: { Buyer: true, Seller: true },

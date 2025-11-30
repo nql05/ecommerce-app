@@ -34,15 +34,25 @@ export const login = async (req: Request, res: Response) => {
       return res.json({ token, role, loginName });
     }
 
+    console.log(loginName, password, role);
+
     // Lookup user in DB
     const user = await userService.findByLoginName(loginName);
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    console.log(user);
+    if (!user) {
+      console.log("Invalid User")
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
 
     // Compare password
     const passwordMatches = await comparePassword(
       password,
       (user as any).Password
     );
+
+    console.log(passwordMatches)
+
     if (!passwordMatches)
       return res.status(400).json({ error: "Invalid credentials" });
 
@@ -54,6 +64,8 @@ export const login = async (req: Request, res: Response) => {
       : "A";
     if (role !== actualRole)
       return res.status(403).json({ error: "Unauthorized role" });
+
+    console.log("Logic success");
 
     const token = generateToken({
       loginName: (user as any).LoginName,
