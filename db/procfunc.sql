@@ -5,7 +5,7 @@ GO
 -- ======================================================
 -- Function 1: Caclulate TotalCost of Cart based on Quantity of StoredSKU and Price in SKU
 -- ======================================================
-CREATE FUNCTION func_CalculateCartTotal(@CartID INT)
+CREATE OR ALTER FUNCTION func_CalculateCartTotal(@CartID INT)
 RETURNS BIGINT
 AS
 BEGIN
@@ -30,7 +30,7 @@ GO
 -- ======================================================
 -- Function 2: Calculate TotalCost in SubOrder based on Total_SKU_Price + Delivery Price + Applied Voucher discount
 -- ======================================================
-CREATE FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
+CREATE OR ALTER FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
 RETURNS BIGINT
 AS
 BEGIN
@@ -96,7 +96,7 @@ GO
 -- ======================================================
 -- Procedure 0: Alter Quantity in StoredSKU
 -- ======================================================
-CREATE PROCEDURE prc_UpdateQuantityStoredSKU
+CREATE OR ALTER PROCEDURE prc_UpdateQuantityStoredSKU
     @Quantity INT,
     @CartID INT,
     @ProductID INT,
@@ -149,12 +149,13 @@ GO
 -- Procedure 1: Move data from Cart table into Order table, 
 -- Parameters are AccountID, ProviderName, AddressID; Time and Date are depends on the real time buyers make orders
 -- ======================================================
-CREATE PROCEDURE prc_CreateOrderFromStoredSKU
+CREATE OR ALTER PROCEDURE prc_CreateOrderFromStoredSKU
     @LoginName VARCHAR(100),
     @AccountID VARCHAR(30),
     @BankProviderName VARCHAR(10),
     @DeliveryMethodName VARCHAR(100),
-    @DeliveryProviderName VARCHAR(100)
+    @DeliveryProviderName VARCHAR(100),
+    @AddressID INT
 AS
 BEGIN
     -- Step 1: Validate Input Parameters
@@ -173,14 +174,14 @@ BEGIN
     END
 
     -- Check if Delivery Method exists
-    IF NOT EXISTS (SELECT 1 FROM DeliveryMethod WHERE DeliveryMethodName = @DeliveryMethodName)
+    IF NOT EXISTS (SELECT 1 FROM DeliveryMethod WHERE MethodName = @DeliveryMethodName)
     BEGIN
         PRINT 'Error: Delivery Method "' + @DeliveryMethodName + '" is invalid.';
         RETURN;
     END
 
     -- Check if Delivery Provider exists
-    IF NOT EXISTS (SELECT 1 FROM DeliveryProvider WHERE DeliveryProviderName = @DeliveryProviderName)
+    IF NOT EXISTS (SELECT 1 FROM DeliveryProvider WHERE ProviderName = @DeliveryProviderName)
     BEGIN
         PRINT 'Error: Delivery Provider "' + @DeliveryProviderName + '" is invalid.';
         RETURN;
@@ -191,7 +192,6 @@ BEGIN
         -- Variables to store data we need to fetch
         DECLARE @CartID INT;
         DECLARE @CartTotalCost INT;
-        DECLARE @AddressID INT;
         DECLARE @DeliveryPrice INT = 30000;
         DECLARE @NewOrderID INT;
         DECLARE @NewSubOrderID INT;
@@ -200,11 +200,6 @@ BEGIN
         SELECT @CartID = CartID, @CartTotalCost = TotalCost
         FROM Cart 
         WHERE LoginName = @LoginName;
-
-        -- 2. Get the Default Address ID from AddressInfo table
-        SELECT TOP 1 @AddressID = AddressID
-        FROM AddressInfo
-        WHERE LoginName = @LoginName AND IsAddressDefault = 'Y';
 
         -- Safety Check: Stop if  buyer doesn't add SKU to their cart
         IF @CartTotalCost = 0
@@ -262,12 +257,12 @@ BEGIN
         PRINT 'Error occurred: ' + @ErrorMessage;
     END CATCH
 END;
-GO 
+GO
 
 -- ======================================================
 -- Procedure 2: Update Buyer's Money Spent OR Seller's Money Earned
 -- ======================================================
-CREATE PROCEDURE prc_UpdateMoney
+CREATE OR ALTER PROCEDURE prc_UpdateMoney
     @UserRole VARCHAR(10), -- Buyer OR Seller
     @LoginName VARCHAR(100),
     @Amount BIGINT
@@ -295,7 +290,7 @@ GO
 -- ======================================================
 -- Procedure 3: Update InStockNumber (Decrease Stock)
 -- ======================================================
-CREATE PROCEDURE prc_UpdateInStockNumber
+CREATE OR ALTER PROCEDURE prc_UpdateInStockNumber
     @ProductID INT,
     @SKUName VARCHAR(100),
     @Quantity INT
@@ -316,7 +311,7 @@ GO
 -- ======================================================
 -- Procedure 4: DELETE data from StoredSKU 
 -- ======================================================
-CREATE PROCEDURE prc_DeleteStoredSKU
+CREATE OR ALTER PROCEDURE prc_DeleteStoredSKU
     @LoginName VARCHAR(100)
 AS
 BEGIN

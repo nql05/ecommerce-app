@@ -1,6 +1,6 @@
 SELECT SYSTEM_USER;
 
-SELECT * FROM Cart;
+SELECT * FROM Cart WHERE CartID = 1;
 
 SELECT * FROM StoredSKU;
 
@@ -22,3 +22,4 @@ EXEC prc_CreateOrderFromStoredSKU
     @BankProviderName = 'VCB',
     @DeliveryMethodName = 'Standard',
     @DeliveryProviderName = 'VNPost';
+

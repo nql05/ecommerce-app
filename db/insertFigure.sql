@@ -1,4 +1,4 @@
-USE Test;
+USE Ecommerce;
 DELETE FROM SKUImage;
 GO
 

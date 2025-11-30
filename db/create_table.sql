@@ -355,3 +355,5 @@ CREATE TABLE Withdrawal (
 	RemainingBalance INT NOT NULL DEFAULT 0 CHECK (RemainingBalance >= 0)
 );
 GO
+
+
