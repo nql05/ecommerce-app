@@ -20,8 +20,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const res = await api.get(API_PATHS.BUYER.CART.GET);
       const count = res.data?.StoredSKU?.length || 0; // Count unique SKUs
       setCartCount(count);
-    } catch (err) {
-      alert("Failed to fetch cart count.");
+    } catch (err: any) {
+      // Silently fail for cart count - don't interrupt user experience
+      // Only log error for debugging purposes
       console.error("Error fetching cart count:", err);
     }
   }, []);

@@ -52,10 +52,11 @@ export default function AccountPage() {
       } catch (err: any) {
         console.error("Failed to fetch profile:", err);
         if (err.response?.status === 401) {
-          alert("Please login to view your profile");
-          router.push("/login");
+          alert("⚠️ Please login to view your profile");
+          router.push("/role");
         } else {
-          alert("Failed to load profile");
+          const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+          alert(`❌ Unable to load profile: ${errorMsg}.\n\nPlease try refreshing the page or login again.`);
         }
       } finally {
         setLoading(false);
@@ -79,7 +80,7 @@ export default function AccountPage() {
     return (
       <main className="pt-32 pb-16">
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Profile not found</p>
+          <p className="text-gray-500">❌ Profile not found. Please login again.</p>
         </div>
       </main>
     );

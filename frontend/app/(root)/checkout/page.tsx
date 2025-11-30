@@ -108,17 +108,17 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!accountID.trim()) {
-      alert("Please enter your bank account number");
+      alert("⚠️ Please enter your bank account number to proceed with payment.");
       return;
     }
 
     if (selectedItems.length === 0) {
-      alert("No items to checkout");
+      alert("⚠️ No items to checkout. Please add items to your cart first.");
       return;
     }
 
     if (!selectedAddressID) {
-      alert("Please select a delivery address");
+      alert("⚠️ Please select a delivery address to continue with your order.");
       return;
     }
 
@@ -147,13 +147,12 @@ export default function CheckoutPage() {
         await cartContext.fetchCartCount();
       }
 
-      alert("Order placed successfully!");
+      alert("✅️ Order placed successfully!\n\nYour order has been confirmed and is being processed.");
       router.push("/product");
     } catch (err: any) {
       console.error("Failed to place order:", err);
-      alert(
-        err.response?.data?.error || "Failed to place order. Please try again."
-      );
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to place order: ${errorMsg}.\n\nPlease verify your information and try again.`);
     } finally {
       setLoading(false);
     }

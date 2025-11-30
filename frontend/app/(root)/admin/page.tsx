@@ -54,10 +54,11 @@ export default function AdminPage() {
       } catch (err: any) {
         console.error("Failed to fetch admin data:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
-          alert("Unauthorized access. Admin only.");
-          router.push("/");
+          alert("⚠️ Unauthorized access. Admin privileges required.");
+          router.push("/role");
         } else {
-          alert("Failed to load admin data");
+          const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+          alert(`❌ Unable to load admin data: ${errorMsg}.\n\nPlease try refreshing the page or login again.`);
         }
       } finally {
         setLoading(false);

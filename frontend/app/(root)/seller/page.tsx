@@ -74,9 +74,11 @@ export default function SellerDashboard() {
     try {
       await api.delete(API_PATHS.SELLER.PRODUCTS.DELETE(id));
       setProducts(products.filter((p) => p.ProductID !== id));
-      alert("Product deleted");
-    } catch (err) {
-      alert("Failed to delete product");
+      alert("✅️ Product deleted successfully");
+    } catch (err: any) {
+      console.error("Failed to delete product:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to delete product: ${errorMsg}.\n\nPlease try again.`);
     }
   };
 
@@ -191,10 +193,11 @@ export default function SellerDashboard() {
         )
       );
 
-      alert("SKU deleted");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete variant");
+      alert("✅️ Product SKU deleted successfully");
+    } catch (err: any) {
+      console.error("Failed to delete variant:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to delete variant: ${errorMsg}.\n\nPlease try again.`);
     }
   };
 
@@ -300,7 +303,7 @@ export default function SellerDashboard() {
         // Refresh list to get full structure including SKU
         const listRes = await api.get(API_PATHS.SELLER.PRODUCTS.LIST);
         setProducts(listRes.data);
-        alert("Product updated");
+        alert("✅️ Product updated successfully");
       } else {
         // Add
         const payload = {
@@ -326,12 +329,13 @@ export default function SellerDashboard() {
         // Refresh list to get full structure including SKU
         const listRes = await api.get(API_PATHS.SELLER.PRODUCTS.LIST);
         setProducts(listRes.data);
-        alert("Product added");
+        alert("✅️ Product added successfully");
       }
       setProductModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save product");
+    } catch (err: any) {
+      console.error("Failed to save product:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to save product: ${errorMsg}.\n\nPlease check your information and try again.`);
     }
   };
 

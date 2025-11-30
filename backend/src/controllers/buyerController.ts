@@ -4,8 +4,12 @@ import { parsePrismaError } from "../utils/prismaError";
 
 export const listProducts = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
-    const products = await buyerService.findMany(search as string | undefined);
+    const { search, brand, sortBy } = req.query;
+    const products = await buyerService.findMany(
+      search as string | undefined,
+      brand as string | undefined,
+      sortBy as "price_asc" | "price_desc" | undefined
+    );
     return res.json(products);
   } catch (err) {
     console.error(`listProducts error: ${(err as Error).message}`);
@@ -238,6 +242,21 @@ export const editComment = async (req: Request, res: Response) => {
   }
 };
 
+export const getBrands = async (req: Request, res: Response) => {
+  try {
+    const brands = await buyerService.getBrands();
+    return res.json(brands);
+  } catch (err) {
+    console.error(`getBrands error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
 export default {
   listProducts,
   getProductDetails,
@@ -251,4 +270,5 @@ export default {
   addComment,
   deleteComment,
   editComment,
+  getBrands,
 };
