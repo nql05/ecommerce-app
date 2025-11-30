@@ -16,7 +16,6 @@ const convertBigIntToNumber = (obj: any): any => {
 };
 
 const findByLoginName = async (loginName: string) => {
-<<<<<<< HEAD
   const result: any[] = await prisma.$queryRaw`
     SELECT u.*, b.MoneySpent, s.ShopName, s.SellerName, s.MoneyEarned
     FROM UserInfo u
@@ -25,14 +24,6 @@ const findByLoginName = async (loginName: string) => {
     WHERE u.LoginName = ${loginName}
   `;
   return convertBigIntToNumber(result[0] || null);
-=======
-  console.log("Find user of name: ", loginName);
-
-  return prisma.userInfo.findUnique({
-    where: { LoginName: loginName },
-    include: { Buyer: true, Seller: true },
-  });
->>>>>>> master
 };
 
 const getUserProfile = async (loginName: string) => {
