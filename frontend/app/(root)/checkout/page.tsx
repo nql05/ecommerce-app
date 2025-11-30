@@ -32,7 +32,7 @@ interface Address {
   Commune: string;
   DetailAddress: string;
   AddressType: string;
-  IsAddressDefault: boolean;
+  IsAddressDefault: string;
 }
 
 const deliveryProviders = [
@@ -72,7 +72,7 @@ export default function CheckoutPage() {
 
         // Set default address if available
         const defaultAddr = addressRes.data.find(
-          (a: Address) => a.IsAddressDefault
+          (a: Address) => a.IsAddressDefault === "Y"
         );
         if (defaultAddr) {
           setSelectedAddressID(defaultAddr.AddressID);
@@ -205,7 +205,7 @@ export default function CheckoutPage() {
                           <span className="text-gray-600">
                             {addr.ContactPhoneNumber}
                           </span>
-                          {addr.IsAddressDefault && (
+                          {addr.IsAddressDefault === "Y" && (
                             <span className="text-xs bg-brand text-white px-2 py-0.5 rounded">
                               Default
                             </span>
