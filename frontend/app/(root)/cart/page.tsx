@@ -152,9 +152,10 @@ export default function Cart() {
       if (cartContext) {
         cartContext.setCartCount(Math.max(0, cartContext.cartCount - 1));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to remove item:", err);
-      alert("Failed to remove item");
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to remove item from cart: ${errorMsg}.\n\nPlease try again or refresh the page.`);
     }
   };
 
@@ -182,15 +183,16 @@ export default function Cart() {
       }
 
       fetchCart();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete items:", err);
-      alert("Failed to delete some items");
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to clear cart: ${errorMsg}.\n\nSome items may not have been removed. Please refresh the page.`);
     }
   };
 
   const handleCheckout = () => {
     if (!cart?.StoredSKU?.length) {
-      alert("Your cart is empty");
+      alert("⚠️ Your cart is empty. Please add items before checking out.");
       return;
     }
     router.push("/checkout");

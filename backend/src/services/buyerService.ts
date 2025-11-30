@@ -328,7 +328,9 @@ const removeFromCart = async (
   `;
 
   if (result.length === 0 || result[0]?.CartID === null) {
-    throw new Error("Cart not found or item not in cart");
+    throw new Error(
+      `Unable to remove item from cart. The item (Product ID: ${productID}, SKU: ${skuName}) was not found in your cart. It may have already been removed.`
+    );
   }
 
   return convertBigIntToNumber(result[0]);
@@ -366,7 +368,9 @@ const createOrder = async (
   `;
 
   if (!result || result.length === 0)
-    throw new Error("Order creation failed or no order found");
+    throw new Error(
+      "Order creation failed. The order could not be created or no order ID was returned. Please verify your cart has items, your delivery information is complete, and try again."
+    );
   const newOrderID = result[0].OrderID;
 
   return readOrderDetails(newOrderID);
@@ -445,11 +449,15 @@ const deleteComment = async (loginName: string, commentID: number) => {
   `;
 
   if (!comment || comment.length === 0) {
-    throw new Error("Comment not found");
+    throw new Error(
+      `Review not found. The review with ID ${commentID} does not exist or has already been deleted.`
+    );
   }
 
   if (comment[0].LoginName !== loginName) {
-    throw new Error("Unauthorized to delete this comment");
+    throw new Error(
+      "Unauthorized to delete this review. You can only delete your own reviews."
+    );
   }
 
   return prisma.$executeRaw`
@@ -471,11 +479,15 @@ const editComment = async (
   `;
 
   if (!comment || comment.length === 0) {
-    throw new Error("Comment not found");
+    throw new Error(
+      `Review not found. The review with ID ${commentID} does not exist or has already been deleted.`
+    );
   }
 
   if (comment[0].LoginName !== loginName) {
-    throw new Error("Unauthorized to edit this comment");
+    throw new Error(
+      "Unauthorized to edit this review. You can only edit your own reviews."
+    );
   }
 
   return prisma.$executeRaw`
