@@ -303,7 +303,6 @@ const removeFromCart = async (
 
 const createOrder = async (
   loginName: string,
-  skus: any[],
   addressID: number,
   providerName: string,
   deliveryMethod: string,
@@ -317,12 +316,12 @@ const createOrder = async (
   // skus and addressID parameters are ignored by the procedure.
   await prisma.$executeRaw`
     EXEC prc_CreateOrderFromStoredSKU
-      @LoginName = ${loginName},
-      @AccountID = ${accountIdValue},
-      @BankProviderName = ${providerName},
-      @DeliveryMethodName = ${deliveryMethod},
-      @DeliveryProviderName = ${deliveryProvider},
-      @AddressID = ${addressID}
+      ${loginName},
+      ${accountIdValue},
+      ${providerName},
+      ${deliveryMethod},
+      ${deliveryProvider},
+      ${addressID}
   `;
 
   // Fetch the latest order for this user to return details

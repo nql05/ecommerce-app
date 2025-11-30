@@ -5,7 +5,7 @@ GO
 -- ======================================================
 -- Function 1: Caclulate TotalCost of Cart based on Quantity of StoredSKU and Price in SKU
 -- ======================================================
-CREATE OR ALTER FUNCTION func_CalculateCartTotal(@CartID INT)
+CREATE FUNCTION func_CalculateCartTotal(@CartID INT)
 RETURNS BIGINT
 AS
 BEGIN
@@ -30,7 +30,7 @@ GO
 -- ======================================================
 -- Function 2: Calculate TotalCost in SubOrder based on Total_SKU_Price + Delivery Price + Applied Voucher discount
 -- ======================================================
-CREATE OR ALTER FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
+CREATE FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
 RETURNS BIGINT
 AS
 BEGIN

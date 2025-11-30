@@ -67,6 +67,6 @@ BEGIN
     EXEC prc_UpdateInStockNumber @ProductID = @ProductID, @SKUName = @SKUName, @Quantity = @Quantity;
 
     --5. DELETE StoredSKU
-    -- EXEC prc_DeleteStoredSKU @LoginName = @BuyerLogin;
+    EXEC prc_DeleteStoredSKU @LoginName = @BuyerLogin;
 END;
 GO
