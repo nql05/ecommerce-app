@@ -29,12 +29,12 @@ const convertBigIntToNumber = (obj: any): any => {
   return obj;
 };
 
-const findMany = async (search?: string) => {
-  const whereClause = search
-    ? Prisma.sql`WHERE p.ProductName LIKE ${"%" + search + "%"}`
-    : Prisma.sql``;
-
-  const results: any[] = await prisma.$queryRaw`
+const findMany = async (
+  search?: string,
+  brand?: string,
+  sortBy?: "price_asc" | "price_desc"
+) => {
+  let query = `
     SELECT 
       p.*,
       (
@@ -46,8 +46,41 @@ const findMany = async (search?: string) => {
         FOR JSON PATH
       ) AS SKU
     FROM ProductInfo p
-    ${whereClause}
   `;
+
+  // Build WHERE conditions
+  const conditions: string[] = [];
+  if (search) {
+    conditions.push(`p.ProductName LIKE '%${search}%'`);
+  }
+  if (brand) {
+    conditions.push(`p.ProductBrand = '${brand}'`);
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(" AND ")}`;
+  }
+
+  // Build ORDER BY clause
+  if (sortBy === "price_asc") {
+    query += `
+      ORDER BY (
+        SELECT MIN(s.Price) 
+        FROM SKU s 
+        WHERE s.ProductID = p.ProductID
+      ) ASC
+    `;
+  } else if (sortBy === "price_desc") {
+    query += `
+      ORDER BY (
+        SELECT MIN(s.Price) 
+        FROM SKU s 
+        WHERE s.ProductID = p.ProductID
+      ) DESC
+    `;
+  }
+
+  const results: any[] = await prisma.$queryRawUnsafe(query);
 
   // Parse JSON strings to objects
   return results.map((product: any) => {
@@ -332,7 +365,8 @@ const createOrder = async (
     ORDER BY OrderID DESC
   `;
 
-  if (!result || result.length === 0) throw new Error("Order creation failed or no order found");
+  if (!result || result.length === 0)
+    throw new Error("Order creation failed or no order found");
   const newOrderID = result[0].OrderID;
 
   return readOrderDetails(newOrderID);
@@ -375,7 +409,7 @@ const readOrderDetails = async (orderID: number) => {
   `;
 
   if (!result || result.length === 0) return null;
-  const jsonString = result.map(row => Object.values(row)[0]).join('');
+  const jsonString = result.map((row) => Object.values(row)[0]).join("");
   if (!jsonString) return null;
   return JSON.parse(jsonString);
 };
@@ -451,6 +485,17 @@ const editComment = async (
   `;
 };
 
+const getBrands = async () => {
+  const results: any[] = await prisma.$queryRaw`
+    SELECT DISTINCT ProductBrand
+    FROM ProductInfo
+    WHERE ProductBrand IS NOT NULL
+    ORDER BY ProductBrand ASC
+  `;
+
+  return results.map((r) => r.ProductBrand);
+};
+
 export default {
   findMany,
   findUnique,
@@ -464,4 +509,5 @@ export default {
   addComment,
   deleteComment,
   editComment,
+  getBrands,
 };

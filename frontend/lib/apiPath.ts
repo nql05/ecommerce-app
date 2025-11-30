@@ -13,6 +13,7 @@ export const API_PATHS = {
       SEARCH: "/buyer/products/search", // Search all products
       DETAIL: (productId: string) => `/buyer/products/${productId}`, // Product detail
     },
+    BRANDS: "/buyer/brands",
     CART: {
       GET: "/buyer/cart",
     },
