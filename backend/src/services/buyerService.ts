@@ -196,7 +196,7 @@ const addToCart = async (
   if (result[0]?.ErrorMessage) {
     throw new Error(result[0].ErrorMessage);
   }
-  const sku = skuResult[0];
+  const sku = result[0];
 
   return convertBigIntToNumber(result[0]);
 };
