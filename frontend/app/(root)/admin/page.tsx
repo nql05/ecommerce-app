@@ -22,9 +22,7 @@ interface Buyer {
   UserName: string;
   Email: string | null;
   PhoneNumber: string | null;
-  Buyer: {
-    MoneySpent: number;
-  };
+  MoneySpent: number | null;
 }
 
 interface Seller {
@@ -32,11 +30,9 @@ interface Seller {
   UserName: string;
   Email: string | null;
   PhoneNumber: string | null;
-  Seller: {
-    ShopName: string;
-    SellerName: string;
-    MoneyEarned: number;
-  };
+  ShopName: string | null;
+  SellerName: string | null;
+  MoneyEarned: number | null;
 }
 
 export default function AdminPage() {
@@ -58,10 +54,11 @@ export default function AdminPage() {
       } catch (err: any) {
         console.error("Failed to fetch admin data:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
-          alert("Unauthorized access. Admin only.");
-          router.push("/");
+          alert("⚠️ Unauthorized access. Admin privileges required.");
+          router.push("/role");
         } else {
-          alert("Failed to load admin data");
+          const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+          alert(`❌ Unable to load admin data: ${errorMsg}.\n\nPlease try refreshing the page or login again.`);
         }
       } finally {
         setLoading(false);
@@ -198,7 +195,7 @@ export default function AdminPage() {
                           {buyer.PhoneNumber || "N/A"}
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-brand">
-                          {formatVND(buyer.Buyer.MoneySpent)}
+                          {formatVND(buyer.MoneySpent || 0)}
                         </td>
                       </tr>
                     ))
@@ -261,11 +258,11 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="font-semibold text-purple-600">
-                            {seller.Seller.ShopName}
+                            {seller.ShopName || "N/A"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-700">
-                          {seller.Seller.SellerName}
+                          {seller.SellerName || "N/A"}
                         </td>
                         <td className="px-6 py-4 text-gray-600">
                           {seller.Email || "N/A"}
@@ -274,7 +271,7 @@ export default function AdminPage() {
                           {seller.PhoneNumber || "N/A"}
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-brand">
-                          {formatVND(seller.Seller.MoneyEarned)}
+                          {formatVND(seller.MoneyEarned || 0)}
                         </td>
                       </tr>
                     ))

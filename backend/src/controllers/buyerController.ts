@@ -4,8 +4,12 @@ import { parsePrismaError } from "../utils/prismaError";
 
 export const listProducts = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
-    const products = await buyerService.findMany(search as string | undefined);
+    const { search, brand, sortBy } = req.query;
+    const products = await buyerService.findMany(
+      search as string | undefined,
+      brand as string | undefined,
+      sortBy as "price_asc" | "price_desc" | undefined
+    );
     return res.json(products);
   } catch (err) {
     console.error(`listProducts error: ${(err as Error).message}`);
@@ -89,39 +93,12 @@ export const getCart = async (req: Request, res: Response) => {
   }
 };
 
-export const updateCart = async (req: Request, res: Response) => {
-  try {
-    const { ProductID, SKUName, Quantity } = req.body;
-
-    if (Quantity < 1) {
-      return res.status(400).json({ error: "Quantity must be at least 1" });
-    }
-
-    await buyerService.updateCartQuantity(
-      (req as any).user.loginName,
-      ProductID,
-      SKUName,
-      Quantity
-    );
-    return res.json({ message: "Updated" });
-  } catch (err) {
-    console.error(`updateCart error: ${(err as Error).message}`);
-    const parsed = parsePrismaError(err);
-    return res.status(parsed.status).json({
-      error: parsed.message,
-      code: parsed.code,
-      details: parsed.details,
-    });
-  }
-};
-
 /**
  * Remove the selected Skus from the cart and add it to a new order
  */
 export const proceedCart = async (req: Request, res: Response) => {
   try {
     const {
-      Skus,
       AddressID,
       ProviderName,
       AccountID,
@@ -129,23 +106,9 @@ export const proceedCart = async (req: Request, res: Response) => {
       DeliveryProviderName,
     } = req.body;
 
-    if (!Array.isArray(Skus) || Skus.length === 0) {
-      throw new Error("Invalid, no skus to proceed Order");
-    }
-
-    // First delete Skus from cart
-    for (const Sku of Skus) {
-      await buyerService.removeFromCart(
-        (req as any).user.loginName,
-        Sku.ProductID,
-        Sku.SKUName
-      );
-    }
-
     // Then create order with the selected SKUs (currently, we ignore the quantity in the request vs in the cart)
     const order = await buyerService.createOrder(
       (req as any).user.loginName,
-      Skus,
       AddressID,
       ProviderName,
       DeliveryMethodName,
@@ -279,6 +242,21 @@ export const editComment = async (req: Request, res: Response) => {
   }
 };
 
+export const getBrands = async (req: Request, res: Response) => {
+  try {
+    const brands = await buyerService.getBrands();
+    return res.json(brands);
+  } catch (err) {
+    console.error(`getBrands error: ${(err as Error).message}`);
+    const parsed = parsePrismaError(err);
+    return res.status(parsed.status).json({
+      error: parsed.message,
+      code: parsed.code,
+      details: parsed.details,
+    });
+  }
+};
+
 export default {
   listProducts,
   getProductDetails,
@@ -287,10 +265,10 @@ export default {
   getCart,
   proceedCart,
   removeFromCart,
-  updateCart,
   readOrderDetails,
   getMoneySpent,
   addComment,
   deleteComment,
   editComment,
+  getBrands,
 };

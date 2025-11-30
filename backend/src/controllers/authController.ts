@@ -1,26 +1,6 @@
 import { Request, Response } from "express";
-import { hashPassword, comparePassword, generateToken } from "../utils/auth";
+import { comparePassword, generateToken } from "../utils/auth";
 import userService from "../services/userService";
-
-export const register = async (req: Request, res: Response) => {
-  try {
-    const { loginName, password, userName, role } = req.body;
-    if (!loginName || !password || !userName)
-      return res.status(400).json({ error: "Missing fields" });
-    const hashedPassword = await hashPassword(password);
-    const user = await userService.createUser({
-      loginName,
-      password: hashedPassword,
-      userName,
-      role,
-    });
-    res.json(user);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Register failed", details: (err as Error).message });
-  }
-};
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -34,26 +14,39 @@ export const login = async (req: Request, res: Response) => {
       return res.json({ token, role, loginName });
     }
 
+    console.log(loginName, password, role);
+
     // Lookup user in DB
     const user = await userService.findByLoginName(loginName);
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    console.log(user);
+    if (!user) {
+      console.log("Invalid User")
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
 
     // Compare password
     const passwordMatches = await comparePassword(
       password,
       (user as any).Password
     );
+
+    console.log(passwordMatches)
+
     if (!passwordMatches)
       return res.status(400).json({ error: "Invalid credentials" });
 
-    // Determine role from relations
-    const actualRole = (user as any).Buyer
-      ? "B"
-      : (user as any).Seller
-      ? "S"
-      : "A";
+    // Determine role from relations (raw SQL returns flat structure with LEFT JOIN)
+    const actualRole =
+      (user as any).MoneySpent !== null
+        ? "B"
+        : (user as any).ShopName !== null || (user as any).SellerName !== null
+        ? "S"
+        : "A";
     if (role !== actualRole)
       return res.status(403).json({ error: "Unauthorized role" });
+
+    console.log("Logic success");
 
     const token = generateToken({
       loginName: (user as any).LoginName,
@@ -95,7 +88,6 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 export default {
-  register,
   login,
   logout,
   getProfile,

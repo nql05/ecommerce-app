@@ -11,6 +11,13 @@ AS
 BEGIN
     DECLARE @TotalCost BIGINT
 
+    -- Validation of input paramater @CartID
+    IF @CartID IS NULL
+        RETURN 0
+
+    IF NOT EXISTS (SELECT 1 FROM Cart WHERE CartID = @CartID)
+        RETURN 0;
+
     SELECT @TotalCost = SUM(StoredSKU.Quantity * SKU.Price)
     FROM StoredSKU 
     JOIN SKU ON StoredSKU.ProductID = SKU.ProductID AND StoredSKU.SKUName = SKU.SKUName
@@ -27,6 +34,12 @@ CREATE FUNCTION func_CalculateSubOrderCost(@SubOrderID VARCHAR(100))
 RETURNS BIGINT
 AS
 BEGIN
+    -- validation of input parameter @SubOrderID
+    IF @SubOrderID IS NULL
+        RETURN 0;
+
+    IF NOT EXISTS (SELECT 1 FROM SubOrderInfo WHERE SubOrderID = @SubOrderID)
+        RETURN 0;
     -- Variable
     DECLARE @TotalSKUPrice BIGINT;
     DECLARE @DeliveryPrice BIGINT;
@@ -45,7 +58,6 @@ BEGIN
     FROM AppliedVoucher 
     WHERE SubOrderID = @SubOrderID;
 
-
     IF @VoucherCode IS NOT NULL
     BEGIN
         -- A. Handle Flat Discount
@@ -59,12 +71,11 @@ BEGIN
         ELSE IF EXISTS (SELECT 1 FROM PercentageVoucher WHERE Code = @VoucherCode)
         BEGIN
             DECLARE @Percent DECIMAL(10,2);
-
             SELECT @Percent = PercentageDiscount
             FROM PercentageVoucher 
             WHERE Code = @VoucherCode;
 
-            -- Calculate percentage based on SKU Price (Delivery is usually excluded from discount)
+            -- Calculate percentage based on SKU Price
             SET @Discount = CAST(@TotalSKUPrice * (@Percent / 100.0) AS BIGINT);
         END
     END
@@ -83,13 +94,42 @@ GO
 -- ======================================================
 -- Procedure 0: Alter Quantity in StoredSKU
 -- ======================================================
-CREATE PROCEDURE prc_UpdateQuantityStoredSKU
+CREATE OR ALTER PROCEDURE prc_UpdateQuantityStoredSKU
     @Quantity INT,
     @CartID INT,
     @ProductID INT,
     @SKUName VARCHAR(100)
 AS
 BEGIN
+    -- 1. Check for NULL parameters
+    IF @CartID IS NULL OR @ProductID IS NULL OR @SKUName IS NULL
+    BEGIN
+        PRINT 'Error: CartID, ProductID, and SKUName cannot be NULL.';
+        RETURN;
+    END
+
+    -- 2. Check if Cart exists
+    IF NOT EXISTS (SELECT 1 FROM Cart WHERE CartID = @CartID)
+    BEGIN
+        PRINT 'Error: CartID not found.';
+        RETURN;
+    END
+
+    -- 3. Check if SKU exists (Product + Variant)
+    IF NOT EXISTS (SELECT 1 FROM SKU WHERE ProductID = @ProductID AND SKUName = @SKUName)
+    BEGIN
+        PRINT 'Error: SKU (Product + Variant) not found.';
+        RETURN;
+    END
+
+    -- 4. Check if the item is actually in the cart before trying to update
+    IF NOT EXISTS (SELECT 1 FROM StoredSKU WHERE CartID = @CartID AND ProductID = @ProductID AND SKUName = @SKUName)
+    BEGIN
+        PRINT 'Error: Item not found in the specified Cart.';
+        RETURN;
+    END
+
+    -- If Quantity <= 0, remove item. Otherwise, update it
     IF @Quantity <= 0 
     BEGIN
         DELETE FROM StoredSKU
@@ -112,17 +152,44 @@ CREATE PROCEDURE prc_CreateOrderFromStoredSKU
     @AccountID VARCHAR(30),
     @BankProviderName VARCHAR(10),
     @DeliveryMethodName VARCHAR(100),
-    @DeliveryProviderName VARCHAR(100)
+    @DeliveryProviderName VARCHAR(100),
+    @AddressID INT
 AS
 BEGIN
+    -- Step 1: Validate Input Parameters
+    IF @LoginName IS NULL OR @AccountID IS NULL OR @BankProviderName IS NULL OR 
+       @DeliveryMethodName IS NULL OR @DeliveryProviderName IS NULL
+    BEGIN
+        PRINT 'Error: All parameters (LoginName, AccountID, Bank, DeliveryMethod, DeliveryProvider) are required.';
+        RETURN;
+    END
+
+    -- Check if Buyer exists
+    IF NOT EXISTS (SELECT 1 FROM Buyer WHERE LoginName = @LoginName)
+    BEGIN
+        PRINT 'Error: Buyer ' + @LoginName + ' does not exist.';
+        RETURN;
+    END
+
+    -- Check if Delivery Method exists
+    IF NOT EXISTS (SELECT 1 FROM DeliveryMethod WHERE MethodName = @DeliveryMethodName)
+    BEGIN
+        PRINT 'Error: Delivery Method "' + @DeliveryMethodName + '" is invalid.';
+        RETURN;
+    END
+
+    -- Check if Delivery Provider exists
+    IF NOT EXISTS (SELECT 1 FROM DeliveryProvider WHERE ProviderName = @DeliveryProviderName)
+    BEGIN
+        PRINT 'Error: Delivery Provider "' + @DeliveryProviderName + '" is invalid.';
+        RETURN;
+    END
 
     BEGIN TRANSACTION
-
     BEGIN TRY
         -- Variables to store data we need to fetch
         DECLARE @CartID INT;
         DECLARE @CartTotalCost INT;
-        DECLARE @AddressID INT;
         DECLARE @DeliveryPrice INT = 30000;
         DECLARE @NewOrderID INT;
         DECLARE @NewSubOrderID INT;
@@ -131,11 +198,6 @@ BEGIN
         SELECT @CartID = CartID, @CartTotalCost = TotalCost
         FROM Cart 
         WHERE LoginName = @LoginName;
-
-        -- 2. Get the Default Address ID from AddressInfo table
-        SELECT TOP 1 @AddressID = AddressID
-        FROM AddressInfo
-        WHERE LoginName = @LoginName AND IsAddressDefault = 'Y';
 
         -- Safety Check: Stop if  buyer doesn't add SKU to their cart
         IF @CartTotalCost = 0
@@ -193,7 +255,7 @@ BEGIN
         PRINT 'Error occurred: ' + @ErrorMessage;
     END CATCH
 END;
-GO 
+GO
 
 -- ======================================================
 -- Procedure 2: Update Buyer's Money Spent OR Seller's Money Earned

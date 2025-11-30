@@ -1,55 +1,34 @@
-USE Ecommerce;
+-- 1. Create the Login at the Server level (Master)
+USE [master];
+GO
+IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = 'sManager')
+BEGIN
+    CREATE LOGIN [sManager] WITH PASSWORD = 'sManager123';
+END
 GO
 
--- A. Create Roles (The "Containers" for permissions)
-CREATE ROLE [Role_Admin];
-CREATE ROLE [Role_Buyer];
-CREATE ROLE [Role_Seller];
+-- 2. Create the User at the Database level
+USE [Ecommerce];
+GO
+IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'sManager')
+BEGIN
+    CREATE USER [sManager] FOR LOGIN [sManager]; -- Links to the server login
+END
 GO
 
--- B. Assign Permissions to Roles
-
--- --- BUYER PERMISSIONS ---
--- Can see products
-GRANT SELECT ON dbo.Products TO [Role_Buyer];
--- Can place orders
-GRANT INSERT ON dbo.Orders TO [Role_Buyer];
--- Can see their own order history
-GRANT SELECT ON dbo.Orders TO [Role_Buyer];
--- CRITICAL: Cannot change prices or stock
-DENY UPDATE, DELETE, INSERT ON dbo.Products TO [Role_Buyer];
-
--- --- SELLER PERMISSIONS ---
--- Can see and manage products
-GRANT SELECT, INSERT, UPDATE ON dbo.Products TO [Role_Seller];
--- Can see orders (to fulfill them)
-GRANT SELECT ON dbo.Orders TO [Role_Seller];
--- CRITICAL: Sellers cannot delete order history (Audit trail protection)
-DENY DELETE ON dbo.Orders TO [Role_Seller];
-
--- --- ADMIN PERMISSIONS ---
--- Full control over everything
-GRANT CONTROL ON DATABASE::ShopDB TO [Role_Admin];
+-- 3. Create Role and Add Member
+IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'DB_Manager' AND type = 'R')
+BEGIN
+    CREATE ROLE [DB_Manager];
+END
 GO
 
--- =============================================
--- 3. CREATE LOGIN USERS (For testing)
--- =============================================
--- Note: In a real scenario, you might use Contained Users or AD Accounts.
--- These are standard SQL Logins.
+GRANT CONTROL ON DATABASE::Ecommerce TO [DB_Manager];
+ALTER ROLE [DB_Manager] ADD MEMBER [sManager];
+GO
 
--- Create Logins at Server Level
-CREATE LOGIN [User_Admin] WITH PASSWORD = 'AdminPassword123!';
-CREATE LOGIN [User_Buyer] WITH PASSWORD = 'BuyerPassword123!';
-CREATE LOGIN [User_Seller] WITH PASSWORD = 'SellerPassword123!';
+USE [master];
+GO
 
--- Create Users in Database Level
-CREATE USER [User_Admin] FOR LOGIN [User_Admin];
-CREATE USER [User_Buyer] FOR LOGIN [User_Buyer];
-CREATE USER [User_Seller] FOR LOGIN [User_Seller];
-
--- Add Users to Roles
-ALTER ROLE [Role_Admin] ADD MEMBER [User_Admin];
-ALTER ROLE [Role_Buyer] ADD MEMBER [User_Buyer];
-ALTER ROLE [Role_Seller] ADD MEMBER [User_Seller];
+ALTER LOGIN [sManager] WITH DEFAULT_DATABASE = [Ecommerce];
 GO

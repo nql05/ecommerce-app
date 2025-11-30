@@ -5,6 +5,11 @@ import buyerRoutes from './routes/buyers_route';
 import sellerRoutes from './routes/seller_route';
 import adminRoutes from './routes/admin_route';
 
+// Handle BigInt serialization for JSON.stringify
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 const app = express();
 app.use(cors());
 app.use(express.json());

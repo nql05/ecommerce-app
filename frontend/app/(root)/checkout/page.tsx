@@ -32,7 +32,7 @@ interface Address {
   Commune: string;
   DetailAddress: string;
   AddressType: string;
-  IsAddressDefault: boolean;
+  IsAddressDefault: string;
 }
 
 const deliveryProviders = [
@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const cartContext = useContext(CartContext);
   const [selectedItems, setSelectedItems] = useState<CartItem[]>([]);
+  const [cartTotal, setCartTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [accountID, setAccountID] = useState("");
   const [providerName, setProviderName] = useState("VCB");
@@ -67,10 +68,11 @@ export default function CheckoutPage() {
 
         const cart = cartRes.data;
         setAddresses(addressRes.data);
+        setCartTotal(cart.TotalCost || 0);
 
         // Set default address if available
         const defaultAddr = addressRes.data.find(
-          (a: Address) => a.IsAddressDefault
+          (a: Address) => a.IsAddressDefault === "Y"
         );
         if (defaultAddr) {
           setSelectedAddressID(defaultAddr.AddressID);
@@ -78,23 +80,14 @@ export default function CheckoutPage() {
           setSelectedAddressID(addressRes.data[0].AddressID);
         }
 
-        // Get selected items from sessionStorage (passed from cart page)
-        const selectedKeys = JSON.parse(
-          sessionStorage.getItem("selectedCartItems") || "[]"
-        );
+        // Use all items from cart
+        const items = cart.StoredSKU || [];
 
-        if (selectedKeys.length === 0) {
-          alert("No items selected for checkout");
+        if (items.length === 0) {
+          alert("Your cart is empty");
           router.push("/cart");
           return;
         }
-
-        // Filter cart items based on selected keys
-        const items =
-          cart.StoredSKU?.filter((item: CartItem) => {
-            const key = `${item.ProductID}:::${item.SKUName}`;
-            return selectedKeys.includes(key);
-          }) || [];
 
         setSelectedItems(items);
       } catch (err) {
@@ -109,30 +102,23 @@ export default function CheckoutPage() {
     fetchCartAndSelectedItems();
   }, [router]);
 
-  const calculateSubtotal = () => {
-    return selectedItems.reduce(
-      (sum, item) => sum + item.SKU.Price * item.Quantity,
-      0
-    );
-  };
-
   const calculateTotal = () => {
-    return calculateSubtotal() + deliveryProvider.fee;
+    return cartTotal + deliveryProvider.fee;
   };
 
   const handlePlaceOrder = async () => {
     if (!accountID.trim()) {
-      alert("Please enter your bank account number");
+      alert("⚠️ Please enter your bank account number to proceed with payment.");
       return;
     }
 
     if (selectedItems.length === 0) {
-      alert("No items to checkout");
+      alert("⚠️ No items to checkout. Please add items to your cart first.");
       return;
     }
 
     if (!selectedAddressID) {
-      alert("Please select a delivery address");
+      alert("⚠️ Please select a delivery address to continue with your order.");
       return;
     }
 
@@ -161,16 +147,12 @@ export default function CheckoutPage() {
         await cartContext.fetchCartCount();
       }
 
-      // Clear session storage
-      sessionStorage.removeItem("selectedCartItems");
-
-      alert("Order placed successfully!");
+      alert("✅️ Order placed successfully!\n\nYour order has been confirmed and is being processed.");
       router.push("/product");
     } catch (err: any) {
       console.error("Failed to place order:", err);
-      alert(
-        err.response?.data?.error || "Failed to place order. Please try again."
-      );
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to place order: ${errorMsg}.\n\nPlease verify your information and try again.`);
     } finally {
       setLoading(false);
     }
@@ -222,7 +204,7 @@ export default function CheckoutPage() {
                           <span className="text-gray-600">
                             {addr.ContactPhoneNumber}
                           </span>
-                          {addr.IsAddressDefault && (
+                          {addr.IsAddressDefault === "Y" && (
                             <span className="text-xs bg-brand text-white px-2 py-0.5 rounded">
                               Default
                             </span>
@@ -292,7 +274,7 @@ export default function CheckoutPage() {
                       </div>
 
                       {/* Unit Price */}
-                      <div className="col-span-2 text-center text-sm">
+                      <div className="col-span-2 text-center text-sm font-semibold">
                         {formatVND(item.SKU.Price)}
                       </div>
 
@@ -416,9 +398,7 @@ export default function CheckoutPage() {
                     Subtotal ({selectedItems.length}{" "}
                     {selectedItems.length > 1 ? "items" : "item"}):
                   </span>
-                  <span className="font-semibold">
-                    {formatVND(calculateSubtotal())}
-                  </span>
+                  <span className="font-semibold">{formatVND(cartTotal)}</span>
                 </div>
 
                 {/* Shipping */}

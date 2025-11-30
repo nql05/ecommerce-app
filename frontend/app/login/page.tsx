@@ -48,10 +48,18 @@ export default function Login() {
           router.push("/product");
         }
       } else {
-        setError("Invalid credentials");
+        setError("❌ Invalid credentials. Please check your username and password.");
       }
-    } catch (err) {
-      setError("Login failed");
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      const errorMsg = err.response?.data?.error || err.message;
+      if (err.response?.status === 401) {
+        setError("❌ Invalid username or password. Please try again.");
+      } else if (err.response?.status === 403) {
+        setError("⚠️ Access denied. You don't have permission to login with this role.");
+      } else {
+        setError(`❌ Login failed: ${errorMsg || "Unknown error occurred"}.\n\nPlease try again or contact support.`);
+      }
     }
   };
 

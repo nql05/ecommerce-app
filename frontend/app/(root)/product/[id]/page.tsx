@@ -109,16 +109,17 @@ export default function ProductDetailPage({
         SKUName: selectedSku,
         Quantity: quantity,
       });
-      alert(`Added ${quantity} item(s) to cart!`);
+      alert(`✅️ Successfully added ${quantity} ${quantity === 1 ? 'item' : 'items'} to your cart!`);
       await cartContext?.fetchCartCount();
       setQuantity(1); // Reset quantity
     } catch (err: any) {
       if (err.response?.status === 400 || err.response?.status === 401) {
-        alert("Please login as a buyer to add items to cart.");
+        alert("⚠️ Please login as a buyer to add items to cart.");
       } else {
-        alert("Failed to add to cart. Please try again.");
+        const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+        alert(`❌ Failed to add to cart: ${errorMsg}`);
       }
-      console.log(err);
+      console.error("Add to cart error:", err);
     }
   };
 
@@ -133,31 +134,33 @@ export default function ProductDetailPage({
         Content: newComment,
         Ratings: rating,
       });
-      alert("Comment submitted successfully!");
+      alert("✅️ Your review has been posted successfully!");
       setNewComment("");
       setRating(5);
       fetchProductDetails(false);
     } catch (err: any) {
       console.error("Failed to submit comment:", err);
       if (err.response?.status === 401) {
-        alert("Please login to comment.");
+        alert("⚠️ Please login as a buyer to post a review.");
       } else {
-        alert("Failed to submit comment. Please try again.");
+        const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+        alert(`❌ Failed to post review: ${errorMsg}`);
       }
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+    if (!confirm("Are you sure you want to delete this review?")) return;
     try {
       await api.delete(API_PATHS.BUYER.COMMENTS.DELETE, {
         data: { commentID: commentId },
       });
-      alert("Comment deleted successfully");
+      alert("✅️ Review deleted successfully");
       fetchProductDetails(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete comment:", err);
-      alert("Failed to delete comment");
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to delete review: ${errorMsg}`);
     }
   };
 
@@ -169,12 +172,13 @@ export default function ProductDetailPage({
         content: editContent,
         ratings: editRating,
       });
-      alert("Comment updated successfully");
+      alert("✅️ Review updated successfully");
       setEditingCommentId(null);
       fetchProductDetails(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to edit comment:", err);
-      alert("Failed to edit comment");
+      const errorMsg = err.response?.data?.error || err.message || "Unknown error occurred";
+      alert(`❌ Failed to update review: ${errorMsg}`);
     }
   };
 
@@ -379,7 +383,7 @@ export default function ProductDetailPage({
                 type="submit"
                 className="px-6 py-2 bg-brand text-white rounded-lg font-semibold hover:bg-opacity-90 transition"
               >
-                Post Comment
+                Post Review
               </button>
             </div>
           </div>
