@@ -1,4 +1,74 @@
 import prisma from "../mssql/prisma";
+
+const findMany = async (search?: string) => {
+  return prisma.productInfo.findMany({
+    where: search ? { ProductName: { contains: search } } : {},
+    include: {
+      SKU: {
+        include: {
+          Comment: true,
+          SKUImage: true,
+        },
+      },
+    },
+  });
+};
+
+const findUnique = async (id: number) => {
+  const result = await prisma.$queryRaw<any[]>`
+    SELECT 
+      p.ProductID, 
+      p.LoginName, 
+      p.ProductName, 
+      p.ProductBrand, 
+      p.ProductCategory, 
+      p.ProductDescription, 
+      p.ProductMadeIn,
+      (
+        SELECT 
+          s.ProductID, 
+          s.SKUName, 
+          s.Size, 
+          s.Price, 
+          s.InStockNumber, 
+          s.Weight,
+          (
+            SELECT 
+              c.CommentID, 
+              c.LoginName, 
+              c.ProductID, 
+              c.SKUName, 
+              c.Ratings, 
+              c.Content, 
+              c.ParentCommentID
+            FROM Comment c
+            WHERE c.ProductID = s.ProductID AND c.SKUName = s.SKUName
+            FOR JSON PATH
+          ) AS Comment,
+          (
+            SELECT 
+              si.ProductID,
+              si.SKUName,
+              si.SKU_URL
+            FROM SKUImage si
+            WHERE si.ProductID = s.ProductID AND si.SKUName = s.SKUName
+            FOR JSON PATH
+          ) AS SKUImage
+        FROM SKU s
+        WHERE s.ProductID = p.ProductID
+        FOR JSON PATH
+      ) AS SKU
+    FROM ProductInfo p
+    WHERE p.ProductID = ${id}
+    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+  `;
+
+  if (!result || result.length === 0) return null;
+  const jsonString = Object.values(result[0])[0] as string;
+  if (!jsonString) return null;
+  return JSON.parse(jsonString);
+};
+
 const getAddresses = async (loginName: string) => {
   return prisma.$queryRaw`
     SELECT * FROM AddressInfo WHERE LoginName = ${loginName}
@@ -404,6 +474,8 @@ const editComment = async (
 };
 
 export default {
+  findMany,
+  findUnique,
   getAddresses,
   addToCart,
   getCart,

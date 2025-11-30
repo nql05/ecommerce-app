@@ -1,8 +1,5 @@
 SELECT SYSTEM_USER;
 
-USE Ecommerce;
-GO
-
 SELECT * FROM Cart;
 
 SELECT * FROM StoredSKU;
