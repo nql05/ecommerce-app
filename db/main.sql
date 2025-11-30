@@ -43,3 +43,7 @@ EXEC prc_CreateOrderFromStoredSKU
     @DeliveryProviderName = 'VNPost',
     @AddressID = 1;
 
+
+SELECT * FROM Seller
+JOIN ProductInfo ON Seller.LoginName = ProductInfo.LoginName
+WHERE Seller.LoginName = 'user001';

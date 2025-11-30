@@ -5,7 +5,7 @@ GO
 -- Trigger: trg_UpdateCartTotal
 -- Logic: Recalculates the total cost whenever the StoredSKU table changes
 -- ======================================================
-CREATE OR ALTER TRIGGER trg_UpdateCartTotal ON StoredSKU
+CREATE TRIGGER trg_UpdateCartTotal ON StoredSKU
 AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN

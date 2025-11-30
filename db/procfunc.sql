@@ -58,7 +58,6 @@ BEGIN
     FROM AppliedVoucher 
     WHERE SubOrderID = @SubOrderID;
 
-
     IF @VoucherCode IS NOT NULL
     BEGIN
         -- A. Handle Flat Discount
@@ -72,12 +71,11 @@ BEGIN
         ELSE IF EXISTS (SELECT 1 FROM PercentageVoucher WHERE Code = @VoucherCode)
         BEGIN
             DECLARE @Percent DECIMAL(10,2);
-
             SELECT @Percent = PercentageDiscount
             FROM PercentageVoucher 
             WHERE Code = @VoucherCode;
 
-            -- Calculate percentage based on SKU Price (Delivery is usually excluded from discount)
+            -- Calculate percentage based on SKU Price
             SET @Discount = CAST(@TotalSKUPrice * (@Percent / 100.0) AS BIGINT);
         END
     END
