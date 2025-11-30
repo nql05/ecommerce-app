@@ -95,7 +95,6 @@ export const getCart = async (req: Request, res: Response) => {
 export const proceedCart = async (req: Request, res: Response) => {
   try {
     const {
-      Skus,
       AddressID,
       ProviderName,
       AccountID,
@@ -103,23 +102,9 @@ export const proceedCart = async (req: Request, res: Response) => {
       DeliveryProviderName,
     } = req.body;
 
-    if (!Array.isArray(Skus) || Skus.length === 0) {
-      throw new Error("Invalid, no skus to proceed Order");
-    }
-
-    // First delete Skus from cart
-    for (const Sku of Skus) {
-      await buyerService.removeFromCart(
-        (req as any).user.loginName,
-        Sku.ProductID,
-        Sku.SKUName
-      );
-    }
-
     // Then create order with the selected SKUs (currently, we ignore the quantity in the request vs in the cart)
     const order = await buyerService.createOrder(
       (req as any).user.loginName,
-      Skus,
       AddressID,
       ProviderName,
       DeliveryMethodName,
