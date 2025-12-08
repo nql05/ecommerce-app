@@ -70,3 +70,25 @@ BEGIN
     EXEC prc_DeleteStoredSKU @LoginName = @BuyerLogin;
 END;
 GO
+
+
+-- ======================================================
+-- Trigger: trg_ValidateVoucherDates
+-- ======================================================
+CREATE TRIGGER trg_ValidateVoucherDates
+ON Voucher
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM INSERTED 
+        WHERE StartedTime >= ExpiredTime
+    )
+    BEGIN
+        RAISERROR('Validation Error: Voucher StartedTime must be earlier than ExpiredTime.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+END;
+GO
