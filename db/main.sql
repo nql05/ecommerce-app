@@ -4,6 +4,9 @@ SELECT * FROM Cart WHERE CartID = 1;
 
 SELECT * FROM StoredSKU WHERE CartID = 1;
 
+INSERT INTO Voucher (StartedTime, ExpiredTime, MaxUsedNumber, MinMoneyValue)
+VALUES ('2025-12-30', '2025-01-01', 100, 50000);
+
 -- Use Procedure 0 for + - quantity button
 EXEC prc_UpdateQuantityStoredSKU 
     @Quantity = 5, 

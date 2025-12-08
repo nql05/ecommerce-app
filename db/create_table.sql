@@ -292,7 +292,6 @@ CREATE TABLE Voucher (
     MaxUsedNumber INT NOT NULL DEFAULT 1,
     MinMoneyValue INT NOT NULL DEFAULT 0,
 	-- Constraints
-	CONSTRAINT CHK_Voucher_TimeRange CHECK (StartedTime < ExpiredTime),
 	CONSTRAINT CHK_Voucher_UsedNumber CHECK (CurrentUsedNumber < MaxUsedNumber)
 );
 GO

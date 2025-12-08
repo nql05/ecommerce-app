@@ -287,19 +287,19 @@ GO
 -- ======================================================
 -- Table: Voucher
 -- ======================================================
-INSERT INTO Voucher (StartedTime, ExpiredTime, MaxUsedNumber, MinMoneyValue)
-VALUES 
--- Voucher 1: 10% Off for iPhone 15 (user001)
-('2024-01-01', '2025-12-31', 100, 20000000),
--- Voucher 2: 500k Off for MacBook (user001)
-('2024-01-01', '2025-12-31', 50, 25000000),
--- Voucher 3: 5% Off for Samsung S24 (user003)
-('2024-02-01', '2025-06-30', 200, 15000000),
--- Voucher 4: 200k Off for Sony Headphones (user003)
-('2024-01-01', '2025-12-31', 100, 5000000),
--- Voucher 5: 15% Off for Xiaomi 14 (user005)
-('2024-03-01', '2024-12-31', 30, 10000000);
-GO
+-- INSERT INTO Voucher (StartedTime, ExpiredTime, MaxUsedNumber, MinMoneyValue)
+-- VALUES 
+-- -- Voucher 1: 10% Off for iPhone 15 (user001)
+-- ('2024-01-01', '2025-12-31', 100, 20000000),
+-- -- Voucher 2: 500k Off for MacBook (user001)
+-- ('2024-01-01', '2025-12-31', 50, 25000000),
+-- -- Voucher 3: 5% Off for Samsung S24 (user003)
+-- ('2024-02-01', '2025-06-30', 200, 15000000),
+-- -- Voucher 4: 200k Off for Sony Headphones (user003)
+-- ('2024-01-01', '2025-12-31', 100, 5000000),
+-- -- Voucher 5: 15% Off for Xiaomi 14 (user005)
+-- ('2024-03-01', '2024-12-31', 30, 10000000);
+-- GO
 
 -- ======================================================
 -- Table: PercentageVoucher & FlatDiscountVoucher
@@ -307,47 +307,47 @@ GO
 -- 2. Define the discount types (Assuming IDs 1-5 generated above match Codes VCH-000001 to VCH-000005)
 
 -- VCH-000001: 10% Off (Max 2M)
-INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
-VALUES ('VCH-000001', 10.0, 2000000);
+-- INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
+-- VALUES ('VCH-000001', 10.0, 2000000);
 
--- VCH-000002: Flat 500k Off
-INSERT INTO FlatDiscountVoucher (Code, DiscountAmount)
-VALUES ('VCH-000002', 500000);
+-- -- VCH-000002: Flat 500k Off
+-- INSERT INTO FlatDiscountVoucher (Code, DiscountAmount)
+-- VALUES ('VCH-000002', 500000);
 
--- VCH-000003: 5% Off (Max 1M)
-INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
-VALUES ('VCH-000003', 5.0, 1000000);
+-- -- VCH-000003: 5% Off (Max 1M)
+-- INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
+-- VALUES ('VCH-000003', 5.0, 1000000);
 
--- VCH-000004: Flat 200k Off
-INSERT INTO FlatDiscountVoucher (Code, DiscountAmount)
-VALUES ('VCH-000004', 200000);
+-- -- VCH-000004: Flat 200k Off
+-- INSERT INTO FlatDiscountVoucher (Code, DiscountAmount)
+-- VALUES ('VCH-000004', 200000);
 
--- VCH-000005: 15% Off (Max 3M)
-INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
-VALUES ('VCH-000005', 15.0, 3000000);
-GO
+-- -- VCH-000005: 15% Off (Max 3M)
+-- INSERT INTO PercentageVoucher (Code, PercentageDiscount, MaxAmountAllowed)
+-- VALUES ('VCH-000005', 15.0, 3000000);
+-- GO
 
 -- ======================================================
 -- Table: VoucherOffer
 -- ======================================================
 -- 3. Link Vouchers to Products and Sellers
-INSERT INTO VoucherOffer (VoucherCode, ProductID, LoginName)
-VALUES 
--- user001 offers VCH-000001 on iPhone 15 Pro (ProductID=1)
-('VCH-000001', 1, 'user001'),
+-- INSERT INTO VoucherOffer (VoucherCode, ProductID, LoginName)
+-- VALUES 
+-- -- user001 offers VCH-000001 on iPhone 15 Pro (ProductID=1)
+-- ('VCH-000001', 1, 'user001'),
 
--- user001 offers VCH-000002 on MacBook Air M2 (ProductID=2)
-('VCH-000002', 2, 'user001'),
+-- -- user001 offers VCH-000002 on MacBook Air M2 (ProductID=2)
+-- ('VCH-000002', 2, 'user001'),
 
--- user003 offers VCH-000003 on Samsung S24 Ultra (ProductID=6)
-('VCH-000003', 6, 'user003'),
+-- -- user003 offers VCH-000003 on Samsung S24 Ultra (ProductID=6)
+-- ('VCH-000003', 6, 'user003'),
 
--- user003 offers VCH-000004 on Sony WH-1000XM5 (ProductID=7)
-('VCH-000004', 7, 'user003'),
+-- -- user003 offers VCH-000004 on Sony WH-1000XM5 (ProductID=7)
+-- ('VCH-000004', 7, 'user003'),
 
--- user005 offers VCH-000005 on Xiaomi 14 Pro (ProductID=11)
-('VCH-000005', 11, 'user005');
-GO
+-- -- user005 offers VCH-000005 on Xiaomi 14 Pro (ProductID=11)
+-- ('VCH-000005', 11, 'user005');
+-- GO
 
 -- ======================================================
 -- Table: StoredSKU
