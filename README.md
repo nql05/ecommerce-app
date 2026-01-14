@@ -6,6 +6,12 @@ This project contains a Next.js frontend and an Express.js backend for an e-comm
 - `frontend/`: Next.js app
 - `backend/`: Express.js API
 - `shared/`: Shared types/models
+- `backend/`: DDL, DCL and DML
 
 ## Setup
 See individual README files in `frontend/` and `backend/` for instructions.
+
+## EER Diagram
+<img src="images/EER_Diagram.png" alt="EER Diagram" width="500" />
+
+## Relational Schema
